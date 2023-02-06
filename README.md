@@ -5,3 +5,4 @@
     Use make.
 2) Running:
     Run dataBag_server executable in the server side and dataBag in the client side.
+2.1) Runnig in same host server and clients
