@@ -13,6 +13,7 @@
 #include <netinet/in.h>
 #include <pthread.h>
 #include <netdb.h> 
+#include <arpa/inet.h>
 
 #include "errorHandling.hpp"
 #include "global_definitions.hpp"
@@ -30,7 +31,39 @@ using namespace std;
 void *userTerminalThread(void*);
 void *syncronizationModuleThread(void*);
 
-int main(){
+int main(int argc, char **argv){
+  if(argc > 2){
+    pError("\a\t  Usage: dataBag [server_name]");
+  }
+
+  ClientStateInformation clientStateInformation;
+  clientStateInformation.running_in_server_host = (argc == 1);
+  strcpy(TERMINAL_CLIENT_USER_TERMINAL, ((clientStateInformation.running_in_server_host) ? DEF_TERMINAL_CLIENT_USER_TERMINAL : "/dev/pts/1"));
+  strcpy(TERMINAL_CLIENT_FOLDER_WATCHER, ((clientStateInformation.running_in_server_host) ? DEF_TERMINAL_CLIENT_FOLDER_WATCHER : "/dev/pts/2"));
+  strcpy(TERMINAL_CLIENT_USER_TERMINAL, ((clientStateInformation.running_in_server_host) ? DEF_TERMINAL_CLIENT_USER_TERMINAL : "/dev/pts/3"));
+
+  // // Create Essential Folders
+  struct stat st_sync_dir;
+  struct stat st_temp_dir;
+  int status_sync_dir = stat(SYNCRONIZE_FOLDER, &st_sync_dir);
+  int status_temp_dir = stat(TEMP_FOLDER, &st_temp_dir);
+  if(status_sync_dir != 0){
+    string cmd = "mkdir -p ";
+    cmd += SYNCRONIZE_FOLDER;                        
+    if( system(cmd.c_str()) == 0 )
+      cout << "  ** SYNC_DIR Folder Created: " << SYNCRONIZE_FOLDER << endl;
+    else
+      pError("  ## Can't creat sync Folder!");
+  }
+  if(status_temp_dir != 0){
+    string cmd = "mkdir -p ";
+    cmd += TEMP_FOLDER;                        
+    if( system(cmd.c_str()) == 0 )
+      cout << "  ** TEMP DIR Folder Created: " << TEMP_FOLDER << endl;
+    else
+      pError("  ## Can't creat TEMP Folder!");
+  }
+
   // Clear server terminals
   clearServerTerminal(TERMINAL_CLIENT_USER_TERMINAL);
   clearServerTerminal(TERMINAL_CLIENT_FOLDER_WATCHER);
@@ -52,7 +85,15 @@ int main(){
     cout << "  ** INFO Data Socket created successfully ..." << endl;
 
   // Localize Server Host
-  struct hostent *dataBag_server_host = gethostbyname("localhost");
+  struct hostent *dataBag_server_host;
+  struct in_addr ip_address; 
+  if( argc == 1 )
+    dataBag_server_host = gethostbyname("localhost");
+  else{
+    ip_address.s_addr = inet_addr(argv[1]);
+    dataBag_server_host = gethostbyaddr(&ip_address, sizeof(ip_address), AF_INET);
+  }
+
   if(dataBag_server_host == NULL)
     pError("\a  ##Failure: Can't localize server address!");   
   else
@@ -106,7 +147,6 @@ int main(){
 
   // Aplication User Terminal
   pthread_t user_terminal_thread;
-  ClientStateInformation clientStateInformation;
   clientStateInformation.info_data_communication_socket = info_data_communication_socket;
   clientStateInformation.is_syncronization_active = false;
   clientStateInformation.is_user_logged = false;
@@ -207,7 +247,6 @@ void *syncronizationModuleThread( void *clientStateInformation_arg ){
             string delete_cmd = clientStateInformation->root_folder_path + fileMetadata.name;
             delete_cmd = "rm -r " + delete_cmd;
             system(delete_cmd.c_str());
-            system("echo 'deletei_um_file");
           }else{
             tty << TERMINAL_TEXT_COLOR_WHITE;
             tty << "   <<< Metadata received: " << fileMetadata.name << endl;
@@ -222,13 +261,13 @@ void *syncronizationModuleThread( void *clientStateInformation_arg ){
               tty << "   <<< " << fileMetadata.name << " received: " << nmr_bytes << " Bytes" << endl;
               tty << TERMINAL_TEXT_SETTING_RESET;
 
-              // Write in local file
+              string temp_file_path = clientStateInformation->temp_folder_path + fileMetadata.name;
               string file_path = clientStateInformation->root_folder_path + fileMetadata.name;
-              ofstream writing_file(file_path, ios::binary | ios::out | ios::trunc);
-
-              if(writing_file.is_open()){
-                writing_file.write(buffer, fileMetadata.size);
-              }else{
+             
+              // Write in temp file
+              ofstream temp_writing_file(temp_file_path, ios::binary | ios::out | ios::trunc);
+              bool file_temp_error = false;
+              if(!temp_writing_file.is_open()){
                 tty << TERMINAL_TEXT_COLOR_RED;
                 tty << "  ## Can't open file ";
                 tty << TERMINAL_TEXT_COLOR_CYAN;
@@ -236,6 +275,45 @@ void *syncronizationModuleThread( void *clientStateInformation_arg ){
                 tty << TERMINAL_TEXT_COLOR_RED;
                 tty << " of writing " << endl;
                 tty << TERMINAL_TEXT_SETTING_RESET;
+                file_temp_error = true;
+              }else{
+                temp_writing_file.write(buffer, fileMetadata.size);
+            
+                string comparing_cmd = "cmp " + temp_file_path + " " + file_path;
+                struct stat file_temp_info;                
+                struct stat future_file_info; 
+                int future_file_stat;               
+                stat( temp_file_path.c_str(), &file_temp_info);
+                future_file_stat = stat( file_path.c_str(), &future_file_info);
+                
+                int file_up_to_date;
+                
+                if(fileMetadata.size == 0 &&  file_temp_info.st_size == 0)
+                    file_up_to_date = 0;
+                else
+                    file_up_to_date = system(comparing_cmd.c_str());
+
+                if( future_file_stat != 0 )
+                    file_up_to_date = -1;
+
+                if( file_up_to_date != 0  &&  !file_temp_error){
+                  // Write in local file
+                  ofstream writing_file(file_path, ios::binary | ios::out | ios::trunc);
+
+                  if(writing_file.is_open()){
+                    writing_file.write(buffer, fileMetadata.size);
+                    writing_file.close();
+                  }else{
+                    tty << TERMINAL_TEXT_COLOR_RED;
+                    tty << "  ## Can't open file ";
+                    tty << TERMINAL_TEXT_COLOR_CYAN;
+                    tty << file_path;
+                    tty << TERMINAL_TEXT_COLOR_RED;
+                    tty << " of writing " << endl;
+                    tty << TERMINAL_TEXT_SETTING_RESET;
+                  }
+                }
+                temp_writing_file.close();
               }
             }else{
               tty << TERMINAL_TEXT_COLOR_RED;
@@ -264,7 +342,7 @@ void *syncronizationModuleThread( void *clientStateInformation_arg ){
             // Send metadata to server
             nmr_bytes = write(clientStateInformation->sync_data_communication_socket, (void*)&fileMetadata, sizeof(FileMetadata));
             if( nmr_bytes != -1){
-                  tty << TERMINAL_TEXT_COLOR_WHITE;
+                tty << TERMINAL_TEXT_COLOR_WHITE;
                 tty << "   >>> Metadata sended: " << fileMetadata.name;
                 tty << " to ";
                 tty << TERMINAL_TEXT_COLOR_CYAN;
@@ -301,11 +379,28 @@ void *syncronizationModuleThread( void *clientStateInformation_arg ){
             // Send file to server
             buffer = new char[fileMetadata.size];
 
-
-
-
-
-
+            nmr_bytes = write(clientStateInformation->sync_data_communication_socket, (void*)buffer, fileMetadata.size);
+            if( nmr_bytes != -1 ){
+                tty << TERMINAL_TEXT_COLOR_GREEN;
+                tty << "   >>> " << fileMetadata.name << "(" <<  fileMetadata.size << " Bytes) "<< " sended to ";
+                tty << TERMINAL_TEXT_COLOR_CYAN;
+                tty << "server" << endl;
+                tty << TERMINAL_TEXT_SETTING_RESET;
+            }else{
+                tty << TERMINAL_TEXT_COLOR_RED;
+                tty << "  ## Can't send ";
+                tty << TERMINAL_TEXT_COLOR_CYAN;
+                tty << fileMetadata.name;
+                tty << TERMINAL_TEXT_COLOR_RED;
+                tty << " data by ";
+                tty << TERMINAL_TEXT_COLOR_BLUE;
+                tty << "SYNC_SOCKET";
+                tty << TERMINAL_TEXT_COLOR_RED;
+                tty << " to ";
+                tty << TERMINAL_TEXT_COLOR_CYAN;
+                tty << "server" << endl;
+                tty << TERMINAL_TEXT_SETTING_RESET;
+            }
               
             clientStateInformation->modifications_queue.pop();
             delete[] buffer;

@@ -22,7 +22,9 @@ typedef struct ClientStateInformation{
     
     queue<FileMetadata> modifications_queue;
     std::string root_folder_path;
+    std::string temp_folder_path;
 
+    bool running_in_server_host;
 }ClientStateInformation;
 
 

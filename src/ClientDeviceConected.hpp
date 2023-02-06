@@ -25,6 +25,7 @@ typedef struct ClientDeviceConnected{
     bool is_service_active;
 
     string db_folder_path;
+    string temp_folder_path;
 
     queue<FileMetadata> modified_files_queue;
 }ClientDeviceConnected;

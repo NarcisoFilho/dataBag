@@ -22,6 +22,18 @@ int main(){
     clearServerTerminal(TERMINAL_SERVER_SYNC_MODULE);
     clearServerTerminal(TERMINAL_SERVER_DB_WATCHER);
 
+    // Create Essential Folders
+    struct stat st_temp_dir;
+    int status_temp_dir = stat(TEMP_FOLDER, &st_temp_dir);
+    if(status_temp_dir != 0){
+        string cmd = "mkdir -p ";
+        cmd += TEMP_FOLDER;                        
+        if( system(cmd.c_str()) == 0 )
+        cout << "  ** TEMP DIR Folder Created: " << TEMP_FOLDER << endl;
+        else
+        pError("  ## Can't creat TEMP Folder!");
+    }
+
     // Create Sentinel Socket
     int servers_sentinel_socket = socket(AF_INET, SOCK_STREAM, 0);
     if(servers_sentinel_socket == -1)

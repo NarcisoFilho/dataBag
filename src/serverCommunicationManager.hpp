@@ -224,6 +224,16 @@ void *runNewInfoDataCommunicationSocket(void *clientDeviceConected_arg){
                                 last_ocur += home_dir.length();
                             }
 
+                            // Preparing TEMP folder
+                            clientDeviceConnected.temp_folder_path = TEMP_FOLDER;
+                            //          Fix HOME folder name
+                            last_ocur = 0;
+                            while((last_ocur = clientDeviceConnected.temp_folder_path.find(home_sign,last_ocur)) != string::npos){
+                                cout << clientDeviceConnected.temp_folder_path << endl;
+                                clientDeviceConnected.temp_folder_path.replace( last_ocur, home_sign.length(), home_dir );
+                                last_ocur += home_dir.length();
+                            }
+
                             struct stat st;
                             int status = stat(clientDeviceConnected.db_folder_path.c_str(), &st);
                             
@@ -467,21 +477,61 @@ void *runNewSyncDataCommunicationSocket(void *clientDeviceConected_arg){
                             tty << "   <<< " << fileMetadata.name << "(" << nmr_bytes << " Bytes) received: " << clientDeviceConnected->userDataBag.login << endl;
                             tty << TERMINAL_TEXT_SETTING_RESET;
 
-                            // Writing file in db
-                            std::ofstream writing_file(clientDeviceConnected->db_folder_path + "/" + fileMetadata.name, ofstream::binary | ofstream::out | ofstream::trunc);
-                            writing_file.write(buffer, fileMetadata.size);
-
-                                if (writing_file.fail()) {
+                            // Write in temp file
+                            string temp_file_path = clientDeviceConnected->temp_folder_path;
+                            temp_file_path += "/";
+                            temp_file_path += fileMetadata.name;
+                            string file_path = clientDeviceConnected->db_folder_path + "/" + fileMetadata.name;
+                            ofstream temp_writing_file(temp_file_path, ios::binary | ios::out | ios::trunc);
+                            bool file_temp_error = false;
+                            if(!temp_writing_file.is_open()){
                                 tty << TERMINAL_TEXT_COLOR_RED;
-                                tty << "  ## Can't write file ";
+                                tty << "  ## Can't open temp file ";
                                 tty << TERMINAL_TEXT_COLOR_CYAN;
-                                tty << fileMetadata.name;
+                                tty << temp_file_path;
                                 tty << TERMINAL_TEXT_COLOR_RED;
-                                tty << " in DB folder of user ";
-                                tty << TERMINAL_TEXT_COLOR_CYAN;
-                                tty << clientDeviceConnected->userDataBag.login << endl;
+                                tty << " of writing " << endl;
                                 tty << TERMINAL_TEXT_SETTING_RESET;
+                                file_temp_error = true;
+                            }else{
+                                temp_writing_file.write(buffer, fileMetadata.size);
+
+                                string comparing_cmd = "cmp " + temp_file_path + " " + file_path;
+                                struct stat file_temp_info;                
+                                struct stat future_file_info; 
+                                int future_file_stat;               
+                                stat( temp_file_path.c_str(), &file_temp_info);
+                                future_file_stat = stat( file_path.c_str(), &future_file_info);
+                                
+                                int file_up_to_date;
+                                
+                                if(fileMetadata.size == 0 &&  file_temp_info.st_size == 0)
+                                    file_up_to_date = 0;
+                                else
+                                    file_up_to_date = system(comparing_cmd.c_str());
+
+                                if( future_file_stat != 0 )
+                                    file_up_to_date = -1;
+
+                                if( file_up_to_date != 0  &&  !file_temp_error){
+                                    // Writing file in db
+                                    std::ofstream writing_file(clientDeviceConnected->db_folder_path + "/" + fileMetadata.name, ofstream::binary | ofstream::out | ofstream::trunc);
+                                    writing_file.write(buffer, fileMetadata.size);                                                                
+                                    if (writing_file.fail()) {
+                                        tty << TERMINAL_TEXT_COLOR_RED;
+                                        tty << "  ## Can't write file ";
+                                        tty << TERMINAL_TEXT_COLOR_CYAN;
+                                        tty << fileMetadata.name;
+                                        tty << TERMINAL_TEXT_COLOR_RED;
+                                        tty << " in DB folder of user ";
+                                        tty << TERMINAL_TEXT_COLOR_CYAN;
+                                        tty << clientDeviceConnected->userDataBag.login << endl;
+                                        tty << TERMINAL_TEXT_SETTING_RESET;
+                                    }
+                                    temp_writing_file.close();
+                                    writing_file.close();
                                 }
+                            }
                         }else{
                             tty << TERMINAL_TEXT_COLOR_RED;
                             tty << "  ## Can't receive ";

@@ -148,6 +148,15 @@ void *client_folder_watcher_module(void *clientStateInformation_arg) {
         last_ocur += home_dir.length();
     }
     clientStateInformation->root_folder_path = folderPath + "/";
+    
+    // Fix TEM folder name
+    string temp_folderPath = SYNCRONIZE_FOLDER;
+    last_ocur = 0;
+    while((last_ocur = temp_folderPath.find(home_sign,last_ocur)) != string::npos){
+        temp_folderPath.replace( last_ocur, home_sign.length(), home_dir );
+        last_ocur += home_dir.length();
+    }
+    clientStateInformation->temp_folder_path = temp_folderPath + "/";
    
     // Cleaning sync dir folder
     // Check if the folder is empty
