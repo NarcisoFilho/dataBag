@@ -1,4 +1,4 @@
-============================ DataBag v 0.1:  Take your data wherever you go===============================
+============== DataBag v 0.1:  Take your data wherever you go =================
 
 
 1) Building:
