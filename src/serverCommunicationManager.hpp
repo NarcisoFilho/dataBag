@@ -270,7 +270,7 @@ void *runNewInfoDataCommunicationSocket(void *clientDeviceConected_arg){
                     if (clientDeviceConnected.login_validated){
                         serverRequestResponseDatagram.service_activation_is_already_this = clientDeviceConnected.is_service_active;
                         clientDeviceConnected.is_service_active = true;
-                        serverRequestResponseDatagram.service_activation_state = true;
+                        serverRequestResponseDatagram.service_activation_state = clientDeviceConnected.is_service_active;
                                                 
                         tty << TERMINAL_TEXT_SETTING_RESET;
                         tty << "  ** ";
@@ -288,13 +288,23 @@ void *runNewInfoDataCommunicationSocket(void *clientDeviceConected_arg){
                     }
                     break;
                 case CLIENT_REQUEST_STOP:
-                    if (clientDeviceConnected.login_validated)
-                    {
-                        if (!clientDeviceConnected.is_service_active)
-                        {
-                        }
+                    if (clientDeviceConnected.login_validated){
+                        serverRequestResponseDatagram.service_activation_is_already_this = clientDeviceConnected.is_service_active;
+                        clientDeviceConnected.is_service_active = false;
+                        serverRequestResponseDatagram.service_activation_state = clientDeviceConnected.is_service_active;
+                                                
+                        tty << TERMINAL_TEXT_SETTING_RESET;
+                        tty << "  ** ";
+                        tty << TERMINAL_TEXT_COLOR_GREEN;
+                        tty << "Successfully ";
+                        tty << TERMINAL_TEXT_SETTING_RESET;
+                        tty << "started SYNC service to user ";
+                        tty << TERMINAL_TEXT_COLOR_CYAN;
+                        tty << clientDeviceConnected.userDataBag.login << endl;
+                        tty << TERMINAL_TEXT_SETTING_RESET;
                     }
                     break;
+
                 }
                 
                 // Answer Client Request
@@ -350,6 +360,7 @@ void *runNewSyncDataCommunicationSocket(void *clientDeviceConected_arg){
         if(folder_element_pointer->d_type == DT_REG){
             strcpy(fileMetadata.name, folder_element_pointer->d_name);
             std::ifstream reading_file( clientDeviceConnected->db_folder_path + "/" + fileMetadata.name, ios::binary );
+           
             if( !reading_file.is_open() ){
                 tty << TERMINAL_TEXT_COLOR_RED;
                 tty << "  ## Cant open " << clientDeviceConnected->db_folder_path + "/" + fileMetadata.name << endl;
@@ -403,7 +414,7 @@ void *runNewSyncDataCommunicationSocket(void *clientDeviceConected_arg){
                         reading_file.read(buffer, fileMetadata.size);
                     }else{
                         tty << TERMINAL_TEXT_COLOR_RED;
-                        tty << "  ## Can't read file ";
+                        tty << "  ## Can't open file ";
                         tty << TERMINAL_TEXT_COLOR_CYAN;
                         tty << fileMetadata.name;
                         tty << TERMINAL_TEXT_COLOR_RED;
@@ -418,7 +429,7 @@ void *runNewSyncDataCommunicationSocket(void *clientDeviceConected_arg){
                     nmr_bytes = write(clientDeviceConnected->sync_socket_fd, (void*)buffer, fileMetadata.size);
                     if( nmr_bytes != -1 ){
                         tty << TERMINAL_TEXT_COLOR_GREEN;
-                        tty << "   >>> " << fileMetadata.name << "(" <<  fileMetadata.size << " Bytes) "<< " sended to ";
+                        tty << "   >>> " << fileMetadata.name << "(" <<  nmr_bytes << " Bytes) "<< " sended to ";
                         tty << TERMINAL_TEXT_COLOR_CYAN;
                         tty << clientDeviceConnected->userDataBag.login << endl;
                         tty << TERMINAL_TEXT_SETTING_RESET;
@@ -503,7 +514,7 @@ void *runNewSyncDataCommunicationSocket(void *clientDeviceConected_arg){
 
                             reading_possible_local_file.close();
                         }else{
-                            is_file_already_up_to_date = true;
+                            is_file_already_up_to_date = false;
                         }
 
                         // Writing file in db

@@ -130,7 +130,7 @@ void *server_folder_watcher_module(void *clientDeviceConnected_arg) {
                         clientDeviceConnected->modified_files_queue.push(fileMetadata);
 
                         tty << TERMINAL_TEXT_COLOR_GREEN;
-                        tty << "  ++" << clientDeviceConnected->userDataBag.login << ": " << event->name << action << endl;
+                        tty << "  ++" << clientDeviceConnected->userDataBag.login << ": " << event->name << action << " (" << fileMetadata.size << " Bytes)" << endl;
                         tty << TERMINAL_TEXT_SETTING_RESET; 
                     } else if (event->mask & (IN_DELETE | IN_MOVED_FROM)) {
                         fileMetadata.should_delete_file = true;

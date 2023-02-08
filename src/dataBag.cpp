@@ -40,7 +40,7 @@ int main(int argc, char **argv){
   clientStateInformation.running_in_server_host = (argc == 1);
   strcpy(TERMINAL_CLIENT_USER_TERMINAL, ((clientStateInformation.running_in_server_host) ? DEF_TERMINAL_CLIENT_USER_TERMINAL : "/dev/pts/1"));
   strcpy(TERMINAL_CLIENT_FOLDER_WATCHER, ((clientStateInformation.running_in_server_host) ? DEF_TERMINAL_CLIENT_FOLDER_WATCHER : "/dev/pts/2"));
-  strcpy(TERMINAL_CLIENT_USER_TERMINAL, ((clientStateInformation.running_in_server_host) ? DEF_TERMINAL_CLIENT_USER_TERMINAL : "/dev/pts/3"));
+  strcpy(TERMINAL_CLIENT_SYNC_MODULE, ((clientStateInformation.running_in_server_host) ? DEF_TERMINAL_CLIENT_SYNC_MODULE : "/dev/pts/3"));
 
   // // Create Essential Folders
   struct stat st_sync_dir;
@@ -246,6 +246,9 @@ void *syncronizationModuleThread( void *clientStateInformation_arg ){
             // Delete file
             string delete_cmd = clientStateInformation->root_folder_path + fileMetadata.name;
             delete_cmd = "rm -r " + delete_cmd;
+  cout << TERMINAL_TEXT_COLOR_YELLOW;
+    cout << delete_cmd << endl;
+  cout << TERMINAL_TEXT_SETTING_RESET;
             system(delete_cmd.c_str());
           }else{
             tty << TERMINAL_TEXT_COLOR_WHITE;
@@ -261,13 +264,15 @@ void *syncronizationModuleThread( void *clientStateInformation_arg ){
               tty << "   <<< " << fileMetadata.name << " received: " << nmr_bytes << " Bytes" << endl;
               tty << TERMINAL_TEXT_SETTING_RESET;
 
-              string temp_file_path = clientStateInformation->temp_folder_path + fileMetadata.name;
+            
+              // Write in local file
               string file_path = clientStateInformation->root_folder_path + fileMetadata.name;
-             
-              // Write in temp file
-              ofstream temp_writing_file(temp_file_path, ios::binary | ios::out | ios::trunc);
-              bool file_temp_error = false;
-              if(!temp_writing_file.is_open()){
+              ofstream writing_file(file_path, ios::binary | ios::out | ios::trunc);
+
+              if(writing_file.is_open()){
+                writing_file.write(buffer, fileMetadata.size);
+                writing_file.close();
+              }else{
                 tty << TERMINAL_TEXT_COLOR_RED;
                 tty << "  ## Can't open file ";
                 tty << TERMINAL_TEXT_COLOR_CYAN;
@@ -275,46 +280,8 @@ void *syncronizationModuleThread( void *clientStateInformation_arg ){
                 tty << TERMINAL_TEXT_COLOR_RED;
                 tty << " of writing " << endl;
                 tty << TERMINAL_TEXT_SETTING_RESET;
-                file_temp_error = true;
-              }else{
-                temp_writing_file.write(buffer, fileMetadata.size);
-            
-                string comparing_cmd = "cmp " + temp_file_path + " " + file_path;
-                struct stat file_temp_info;                
-                struct stat future_file_info; 
-                int future_file_stat;               
-                stat( temp_file_path.c_str(), &file_temp_info);
-                future_file_stat = stat( file_path.c_str(), &future_file_info);
-                
-                int file_up_to_date;
-                
-                if(fileMetadata.size == 0 &&  file_temp_info.st_size == 0)
-                    file_up_to_date = 0;
-                else
-                    file_up_to_date = system(comparing_cmd.c_str());
-
-                if( future_file_stat != 0 )
-                    file_up_to_date = -1;
-
-                if( file_up_to_date != 0  &&  !file_temp_error){
-                  // Write in local file
-                  ofstream writing_file(file_path, ios::binary | ios::out | ios::trunc);
-
-                  if(writing_file.is_open()){
-                    writing_file.write(buffer, fileMetadata.size);
-                    writing_file.close();
-                  }else{
-                    tty << TERMINAL_TEXT_COLOR_RED;
-                    tty << "  ## Can't open file ";
-                    tty << TERMINAL_TEXT_COLOR_CYAN;
-                    tty << file_path;
-                    tty << TERMINAL_TEXT_COLOR_RED;
-                    tty << " of writing " << endl;
-                    tty << TERMINAL_TEXT_SETTING_RESET;
-                  }
-                }
-                temp_writing_file.close();
               }
+
             }else{
               tty << TERMINAL_TEXT_COLOR_RED;
               tty << "  ## Can't receive ";

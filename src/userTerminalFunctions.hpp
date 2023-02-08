@@ -130,10 +130,59 @@ void userTerminal_start(ClientStateInformation *clientStateInformation){
 }
 
 void userTerminal_stop(ClientStateInformation *clientStateInformation){
-    if( !(clientStateInformation->is_syncronization_active) )
-        cout << "  Service is already paused!" << endl;
-    else
-        clientStateInformation->is_syncronization_active = false;
+    ClientRequestDatagram clientRequest;
+    ServerRequestResponseDatagram serverResponse;
+    int bytes_number;
+
+    clientRequest.requisition_type = CLIENT_REQUEST_STOP;
+    
+    // Request
+    bytes_number = write(clientStateInformation->info_data_communication_socket, &clientRequest, REQUEST_DATAGRAM_SIZE);
+    if(bytes_number == -1){
+        cout << TERMINAL_TEXT_COLOR_RED;
+        cout << "\a\t  ## Couldn't contact server via ";
+        cout << TERMINAL_TEXT_COLOR_BLUE;
+        cout << "INFO SOCKET";
+        cout << TERMINAL_TEXT_COLOR_RED;
+        cout << "!" << endl;
+        cout << TERMINAL_TEXT_SETTING_RESET;
+        return;
+    }
+
+    // Response
+    bytes_number = socket_read(clientStateInformation->info_data_communication_socket, &serverResponse, REQUEST_RESPONSE_DATAGRAM_SIZE );
+
+    if(bytes_number == -1){
+        cout << TERMINAL_TEXT_COLOR_RED;
+        cout << "\a\t  ## Couldn't receive server answer via ";
+        cout << TERMINAL_TEXT_COLOR_BLUE;
+        cout << "INFO SOCKET";
+        cout << TERMINAL_TEXT_COLOR_RED;
+        cout << "!" << endl;
+        cout << TERMINAL_TEXT_SETTING_RESET;
+        return;
+    }else{
+        clientStateInformation->is_syncronization_active = serverResponse.service_activation_state;
+        if( !serverResponse.service_activation_state ){
+            if(serverResponse.service_activation_is_already_this){
+                cout << TERMINAL_TEXT_COLOR_YELLOW;
+                cout << "\t  ** Service was already";
+                cout << TERMINAL_TEXT_COLOR_GREEN;
+                cout << " stoped";
+                cout << TERMINAL_TEXT_COLOR_YELLOW;
+                cout << "!" << endl;
+                cout << TERMINAL_TEXT_SETTING_RESET;
+            }else{
+                cout << TERMINAL_TEXT_COLOR_BLUE;
+                cout << "\t  ** Sync STOPED!" << endl;
+                cout << TERMINAL_TEXT_SETTING_RESET;
+            }
+        }else{
+            cout << TERMINAL_TEXT_COLOR_RED;
+            cout << "\a\t  ## Error: Can't stop service!" << endl;
+            cout << TERMINAL_TEXT_SETTING_RESET;
+        }
+    }
 }
 
 void userTerminal_status(ClientStateInformation *clientStateInformation){
