@@ -59,9 +59,9 @@ int main(){
         cout << "  ** Server Sentinel Socket binded to port ..."<< SENTINEL_SOCKET_PORT << " successfully" << endl;
     
     // Server's New Device Sentinel Service Thread Initialization
-    pthread_t newDeviceSentinelServiceThread;
+    pthread_t sentinelServiceThread;
 
-    if( pthread_create( &newDeviceSentinelServiceThread, NULL, serverSentinelModule, (void*)&servers_sentinel_socket) != 0 )
+    if( pthread_create( &sentinelServiceThread, NULL, serverSentinelModule, (void*)&servers_sentinel_socket) != 0 )
         pError("Error on initizalization of New Device Sentinel Service Thread");    
     else
         cout << "  ** 'New Device Sentinel' Service initialized successufully ..." << endl;

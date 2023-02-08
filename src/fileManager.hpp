@@ -27,11 +27,34 @@ std::list<string> avoid_files {
     ".goutputstream-"
 };
 
+template<typename T>
+void print_queue(std::queue<T> q, ofstream &tty){
+  while (!q.empty()){
+    tty << "\t" << q.front() << endl;
+    q.pop();
+  }
+  tty << endl;
+}
 
+void print_queue(std::queue<FileMetadata> q, ofstream &tty){
+  FileMetadata file;
+  while (!q.empty()){
+    file = q.front();
+    if(!file.should_delete_file)
+        tty << TERMINAL_TEXT_COLOR_WHITE;
+    else
+        tty << TERMINAL_TEXT_COLOR_RED;
+    tty << "\t" << file.name << endl;
+    
+    q.pop();
+  }
+  tty << endl;
+}
 
 void *server_folder_watcher_module(void *clientDeviceConnected_arg) {
     ClientDeviceConnected *clientDeviceConnected = (ClientDeviceConnected*) clientDeviceConnected_arg;
     ofstream tty(TERMINAL_SERVER_DB_WATCHER, ofstream::out | ofstream::app );
+    ofstream ttyT("/dev/pts/8", ofstream::out | ofstream::app );
 
     // Initializing modified files queue
     tty << TERMINAL_TEXT_SETTING_RESET;
@@ -63,8 +86,12 @@ void *server_folder_watcher_module(void *clientDeviceConnected_arg) {
 
 
     while (clientDeviceConnected->is_connected) {
+
         int i = 0;
         while (i < len) {
+    ttyT << " * Modified List:" << endl;
+    print_queue(clientDeviceConnected->modified_files_queue, ttyT);
+        
             inotify_event *event = (inotify_event *) &buffer[i];
             if (event->len > 0) {
                 // Do nothing if is a avoid file
@@ -86,7 +113,7 @@ void *server_folder_watcher_module(void *clientDeviceConnected_arg) {
 
                     // Print the name of the file that was modified, created, or deleted
                     string action;
-                    if (event->mask & (IN_MODIFY | IN_CLOSE_WRITE)) {
+                    if (event->mask & (IN_CLOSE_WRITE)) {
                         action = "modified";
                     }else if(event->mask & (IN_CREATE)){
                         action = "created";
@@ -98,10 +125,10 @@ void *server_folder_watcher_module(void *clientDeviceConnected_arg) {
                         action = "deleted";
                     action = " " + action;
 
-                    if (event->mask & (IN_MODIFY | IN_CLOSE_WRITE | IN_CREATE | IN_MOVED_TO) ) {
+                    if (event->mask & (IN_CLOSE_WRITE | IN_CREATE | IN_MOVED_TO) ) {
                         fileMetadata.should_delete_file = false;
                         clientDeviceConnected->modified_files_queue.push(fileMetadata);
-                        
+
                         tty << TERMINAL_TEXT_COLOR_GREEN;
                         tty << "  ++" << clientDeviceConnected->userDataBag.login << ": " << event->name << action << endl;
                         tty << TERMINAL_TEXT_SETTING_RESET; 
@@ -133,7 +160,8 @@ void *client_folder_watcher_module(void *clientStateInformation_arg) {
     ClientStateInformation *clientStateInformation = (ClientStateInformation*) clientStateInformation_arg;
     string folderPath = SYNCRONIZE_FOLDER;
     ofstream tty(TERMINAL_CLIENT_FOLDER_WATCHER, ofstream::out | ofstream::app);
-   
+    ofstream ttyT("/dev/pts/9", ofstream::out | ofstream::app );
+
     tty << TERMINAL_TEXT_COLOR_WHITE;
     tty << "  ** Client Folder Watcher Module initialized ..." << endl;
     tty << TERMINAL_TEXT_SETTING_RESET;
@@ -197,6 +225,8 @@ void *client_folder_watcher_module(void *clientStateInformation_arg) {
     while (clientStateInformation->is_connected) {
         int i = 0;
         while (i < len) {
+    ttyT << " * Modified List:" << endl;
+    print_queue(clientStateInformation->modifications_queue, ttyT);
             inotify_event *event = (inotify_event *) &buffer[i];
             if (event->len > 0) { 
                 // Do nothing if is a avoid file
@@ -209,7 +239,7 @@ void *client_folder_watcher_module(void *clientStateInformation_arg) {
                 if( !avoid_this_file ){
                     // Print the name of the file that was modified, created, or deleted
                     string action;
-                    if (event->mask & (IN_MODIFY | IN_CLOSE_WRITE)) {
+                    if (event->mask & (IN_CLOSE_WRITE)) {
                         action = "modified";
                     }else if(event->mask & (IN_CREATE)){
                         action = "created";
@@ -232,17 +262,17 @@ void *client_folder_watcher_module(void *clientStateInformation_arg) {
 
                     // Print the name of the file that was modified, created, or deleted
                     //  Add modified file to modified queue. If file is deleted, flag should_delete is active
-                    if (event->mask & (IN_CLOSE_WRITE | IN_MODIFY | IN_CREATE | IN_MOVED_TO)) {
+                    if (event->mask & (IN_CLOSE_WRITE | IN_CREATE | IN_MOVED_TO)) {
                         if( event->name)
                         fileMetadata.should_delete_file = false;
-                        // clientStateInformation->modifications_queue.push(fileMetadata);
+                        clientStateInformation->modifications_queue.push(fileMetadata);
                         
                         tty << TERMINAL_TEXT_COLOR_GREEN;
                         tty << "  ++" << clientStateInformation->userDataBag.login << ": " << event->name << action << endl;
                         tty << TERMINAL_TEXT_SETTING_RESET; 
                     } else if (event->mask & (IN_DELETE | IN_DELETE_SELF | IN_MOVED_FROM)) {
                         fileMetadata.should_delete_file = true;
-                        // clientStateInformation->modifications_queue.push(fileMetadata);
+                        clientStateInformation->modifications_queue.push(fileMetadata);
 
                         tty << TERMINAL_TEXT_COLOR_YELLOW;
                         tty << "  --" << clientStateInformation->userDataBag.login << ": " << event->name << action << endl;
@@ -266,70 +296,28 @@ void *client_folder_watcher_module(void *clientStateInformation_arg) {
 }
 
 
+void monitor_folder(){
 
+}
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// void fill_sync_list(char* path, SyncList* sync_list){
-//     DIR *dir;
-//     struct dirent *ent;
-//     struct stat st;
-//     if ((dir = opendir (path)) != NULL) {
-//         while ((ent = readdir (dir)) != NULL) {
-//             if(ent->d_name[0] != '.'){
-//                 char file_path[512];
-//                 sprintf(file_path, "%s/%s", path, ent->d_name);
-//                 if(stat(file_path, &st) == 0 && ent->d_type != DT_DIR){
-//                     FileMetadata f;
-//                     memset(f.name, 0, MAX_FILE_NAME_SIZE);
-//                     strncpy(f.name, file_path, MAX_FILE_NAME_SIZE);
-//                     f.last_modification = st.st_mtime;
-//                     sync_list->files[sync_list->num_files++] = f;
-//                 }
-//                 if(ent->d_type == DT_DIR){
-//                     fill_sync_list(file_path, sync_list);
-//                 }
-//             }
-//         }
-//         closedir(dir);
-//     }
-// }
-
-// int* compare_sync_lists(SyncList* client_sync_list, SyncList* server_sync_list){
-//     int* result_list = new int[std::max(client_sync_list->num_files, server_sync_list->num_files)];
-//     for(int i = 0; i < client_sync_list->num_files; i++){
-//         result_list[i] = -1;
-//         for(int j = 0; j < server_sync_list->num_files; j++){
-//             if(strcmp(client_sync_list->files[i].name, server_sync_list->files[j].name) == 0 ){
-//                 if(server_sync_list->files[j].last_modification > client_sync_list->files[i].last_modification){
-//                     result_list[i] = j;
-//                 } 
-//             }
-//         }
-//     }
+off_t get_file_size(string file_path){
+    struct stat file_info;                
+    stat( file_path.c_str(), &file_info);
     
-//     if(client_sync_list->num_files < server_sync_list->num_files )
-//         for( int i = client_sync_list->num_files ; i < server_sync_list->num_files ; i++ )
-//             result_list[i] = i;
-//     return result_list;
-// }
+    return file_info.st_size;
+}
+
+
+
+long int compare_buffer_files( char *buffer1, char *buffer2, long int size ){
+    int qtd_diferent_bytes = 0;
+
+    for(int i = 0 ; i < size ; i++)
+        if( buffer1[i] == buffer2[i] )
+            qtd_diferent_bytes++;
+    
+    return qtd_diferent_bytes;
+}
+
 
 #endif  //__FILE_MANAGER_HPP
