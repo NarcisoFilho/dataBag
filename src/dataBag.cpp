@@ -240,16 +240,29 @@ void *syncronizationModuleThread( void *clientStateInformation_arg ){
         if(!fileMetadata.up_to_date_with_server){
           if(fileMetadata.should_delete_file){
             tty << TERMINAL_TEXT_COLOR_YELLOW;
-            tty << "   <<< Deletation order received: " << fileMetadata.name << endl;
+            tty << "   <<< Deletation order: " << fileMetadata.name << endl;
             tty << TERMINAL_TEXT_SETTING_RESET;
 
             // Delete file
-            string delete_cmd = clientStateInformation->root_folder_path + fileMetadata.name;
-            delete_cmd = "rm -r " + delete_cmd;
-  // cout << TERMINAL_TEXT_COLOR_YELLOW;
-  //   cout << delete_cmd << endl;
-  // cout << TERMINAL_TEXT_SETTING_RESET;
-            system(delete_cmd.c_str());
+            if( access((clientStateInformation->root_folder_path + fileMetadata.name).c_str(), F_OK ) != 0 ){
+              tty << TERMINAL_TEXT_COLOR_RED;
+              tty << "   ### Can't acess to delete file: ";
+              tty << TERMINAL_TEXT_SETTING_RESET;
+              tty << (clientStateInformation->root_folder_path + fileMetadata.name).c_str();
+              tty << TERMINAL_TEXT_COLOR_RED;
+              tty << "!" << endl;
+              tty << TERMINAL_TEXT_SETTING_RESET;
+            }else{
+              if( remove( (clientStateInformation->root_folder_path + fileMetadata.name).c_str() ) != 0 ){
+                tty << TERMINAL_TEXT_COLOR_RED;
+                tty << "   ### Can't delete file: ";
+                tty << TERMINAL_TEXT_SETTING_RESET;
+                tty << (clientStateInformation->root_folder_path + fileMetadata.name).c_str();
+                tty << TERMINAL_TEXT_COLOR_RED;
+                tty << "!" << endl;
+                tty << TERMINAL_TEXT_SETTING_RESET;
+              }
+            }
           }else{
             tty << TERMINAL_TEXT_COLOR_WHITE;
             tty << "   <<< Metadata received: " << fileMetadata.name << endl;
@@ -318,58 +331,67 @@ void *syncronizationModuleThread( void *clientStateInformation_arg ){
               tty << "server" << endl;
               tty << TERMINAL_TEXT_SETTING_RESET;
             }else{
-              tty << TERMINAL_TEXT_COLOR_WHITE;
-              tty << "   >>> Metadata sended: " << fileMetadata.name;
-              tty << " to ";
-              tty << TERMINAL_TEXT_COLOR_CYAN;
-              tty << "server" << endl;
-              tty << TERMINAL_TEXT_SETTING_RESET;
-
-              // Open file in sync_dir folder
-              string file_path = clientStateInformation->root_folder_path + fileMetadata.name;
-              std::ifstream reading_file(file_path);
-              
-              if(!reading_file.is_open()){
-                tty << TERMINAL_TEXT_COLOR_RED;
-                tty << "  ## Can't read file ";
+              if(!fileMetadata.should_delete_file){
+                tty << TERMINAL_TEXT_COLOR_WHITE;
+                tty << "   >>> Metadata sended: " << fileMetadata.name;
+                tty << " to ";
                 tty << TERMINAL_TEXT_COLOR_CYAN;
-                tty << fileMetadata.name;
-                tty << TERMINAL_TEXT_COLOR_RED;
-                tty << " of sync_dir ";
+                tty << "server" << endl;
                 tty << TERMINAL_TEXT_SETTING_RESET;
-              }else{
-                // Read file in sync_dir folder
-                buffer = new char[fileMetadata.size];
-                reading_file.read(buffer, fileMetadata.size);
+                // Open file in sync_dir folder
+                string file_path = clientStateInformation->root_folder_path + fileMetadata.name;
+                std::ifstream reading_file(file_path);
                 
-                // Send file to server
-                nmr_bytes = write(clientStateInformation->sync_data_communication_socket, (void*)buffer, fileMetadata.size);
-                if( nmr_bytes != -1 ){
-                    tty << TERMINAL_TEXT_COLOR_GREEN;
-                    tty << "   >>> " << fileMetadata.name << "(" <<  fileMetadata.size << " Bytes) "<< " sended to ";
-                    tty << TERMINAL_TEXT_COLOR_CYAN;
-                    tty << "server" << endl;
-                    tty << TERMINAL_TEXT_SETTING_RESET;
+                if(!reading_file.is_open()){
+                  tty << TERMINAL_TEXT_COLOR_RED;
+                  tty << "  ## Can't read file ";
+                  tty << TERMINAL_TEXT_COLOR_CYAN;
+                  tty << fileMetadata.name;
+                  tty << TERMINAL_TEXT_COLOR_RED;
+                  tty << " of sync_dir ";
+                  tty << TERMINAL_TEXT_SETTING_RESET;
                 }else{
-                    tty << TERMINAL_TEXT_COLOR_RED;
-                    tty << "  ## Can't send ";
-                    tty << TERMINAL_TEXT_COLOR_CYAN;
-                    tty << fileMetadata.name;
-                    tty << TERMINAL_TEXT_COLOR_RED;
-                    tty << " data by ";
-                    tty << TERMINAL_TEXT_COLOR_BLUE;
-                    tty << "SYNC_SOCKET";
-                    tty << TERMINAL_TEXT_COLOR_RED;
-                    tty << " to ";
-                    tty << TERMINAL_TEXT_COLOR_CYAN;
-                    tty << "server" << endl;
-                    tty << TERMINAL_TEXT_SETTING_RESET;
-                }
+                  // Read file in sync_dir folder
+                  buffer = new char[fileMetadata.size];
+                  reading_file.read(buffer, fileMetadata.size);
                   
-                clientStateInformation->modifications_queue.pop();
-                delete[] buffer;
+                  // Send file to server
+                  nmr_bytes = write(clientStateInformation->sync_data_communication_socket, (void*)buffer, fileMetadata.size);
+                  if( nmr_bytes != -1 ){
+                      tty << TERMINAL_TEXT_COLOR_GREEN;
+                      tty << "   >>> " << fileMetadata.name << "(" <<  fileMetadata.size << " Bytes) "<< " sended to ";
+                      tty << TERMINAL_TEXT_COLOR_CYAN;
+                      tty << "server" << endl;
+                      tty << TERMINAL_TEXT_SETTING_RESET;
+                  }else{
+                      tty << TERMINAL_TEXT_COLOR_RED;
+                      tty << "  ## Can't send ";
+                      tty << TERMINAL_TEXT_COLOR_CYAN;
+                      tty << fileMetadata.name;
+                      tty << TERMINAL_TEXT_COLOR_RED;
+                      tty << " data by ";
+                      tty << TERMINAL_TEXT_COLOR_BLUE;
+                      tty << "SYNC_SOCKET";
+                      tty << TERMINAL_TEXT_COLOR_RED;
+                      tty << " to ";
+                      tty << TERMINAL_TEXT_COLOR_CYAN;
+                      tty << "server" << endl;
+                      tty << TERMINAL_TEXT_SETTING_RESET;
+                  }
+                    
+                  delete[] buffer;
+                }
+              }else{
+                tty << TERMINAL_TEXT_COLOR_YELLOW;
+                tty << "   >>> Deletation order: " << fileMetadata.name;
+                tty << " sended to ";
+                tty << TERMINAL_TEXT_COLOR_CYAN;
+                tty << "server" << endl;
+                tty << TERMINAL_TEXT_SETTING_RESET;
+
               }
             }
+            clientStateInformation->modifications_queue.pop();
           }else{
             // All up to date
             fileMetadata.up_to_date_with_client = true;

@@ -82,10 +82,6 @@ void *serverSentinelModule(void *servers_sentinel_socket_arg){
     return NULL;
 }
 
-void *registerNewDataCommunicationSocket(void *arg){
-    return NULL;
-}
-
 void *runNewInfoDataCommunicationSocket(void *clientDeviceConected_arg){
     ClientDeviceConnected clientDeviceConnected = *((ClientDeviceConnected *)clientDeviceConected_arg);
     clientDeviceConnected.login_validated = false;
@@ -475,129 +471,117 @@ void *runNewSyncDataCommunicationSocket(void *clientDeviceConected_arg){
                 
                 if(nmr_bytes != -1){
                     if(!fileMetadata.up_to_date_with_client){
-                        tty << TERMINAL_TEXT_COLOR_WHITE;
-                        tty << "   <<< Metadata received: " << fileMetadata.name << " from ";
-                        tty << TERMINAL_TEXT_COLOR_CYAN;
-                        tty << clientDeviceConnected->userDataBag.login << endl;
-                        tty << TERMINAL_TEXT_SETTING_RESET;
-
-                        // Receive file from client
-                        buffer = new char[fileMetadata.size];
-                        nmr_bytes = socket_read(clientDeviceConnected->sync_socket_fd, buffer, fileMetadata.size);
-                        if(nmr_bytes != -1 ){
-                            tty << TERMINAL_TEXT_COLOR_GREEN;
-                            tty << "   <<< " << fileMetadata.name << "(" << nmr_bytes << " Bytes) received: " << clientDeviceConnected->userDataBag.login << endl;
+                        if(!fileMetadata.should_delete_file){
+                            tty << TERMINAL_TEXT_COLOR_WHITE;
+                            tty << "   <<< Metadata received: " << fileMetadata.name << " from ";
+                            tty << TERMINAL_TEXT_COLOR_CYAN;
+                            tty << clientDeviceConnected->userDataBag.login << endl;
                             tty << TERMINAL_TEXT_SETTING_RESET;
 
-                        // Check if file received exist in DB and if is equal than the received
-                        std::ifstream reading_possible_local_file(clientDeviceConnected->db_folder_path + "/" + fileMetadata.name);
-                        bool is_file_already_up_to_date = false;
+                            // Receive file from client
+                            buffer = new char[fileMetadata.size];
+                            nmr_bytes = socket_read(clientDeviceConnected->sync_socket_fd, buffer, fileMetadata.size);
+                            if(nmr_bytes != -1 ){
+                                tty << TERMINAL_TEXT_COLOR_GREEN;
+                                tty << "   <<< " << fileMetadata.name << "(" << nmr_bytes << " Bytes) received: " << clientDeviceConnected->userDataBag.login << endl;
+                                tty << TERMINAL_TEXT_SETTING_RESET;
 
-                        if(reading_possible_local_file.is_open()){
-                            int local_file_size = get_file_size(clientDeviceConnected->db_folder_path + "/" + fileMetadata.name);
-                    tty << TERMINAL_TEXT_COLOR_MAGENTA << "Size of local: " << local_file_size << TERMINAL_TEXT_SETTING_RESET << endl;
-                            if(fileMetadata.size != local_file_size ){
-                                is_file_already_up_to_date = false;
-                            }else{
-                                char *buffer_local_file = new char[local_file_size];                                    
-                                reading_possible_local_file.read(buffer_local_file, local_file_size);
+                                // Check if file received exist in DB and if is equal than the received
+                                std::ifstream reading_possible_local_file(clientDeviceConnected->db_folder_path + "/" + fileMetadata.name);
+                                bool is_file_already_up_to_date = false;
 
-                                if( reading_possible_local_file.fail() ){
-                                    is_file_already_up_to_date = false;
-                                }else{
-                                    if( compare_buffer_files( buffer, buffer_local_file, fileMetadata.size) == 0){
-                                        is_file_already_up_to_date = true;
-                                        // tty << TERMINAL_TEXT_COLOR_MAGENTA <<"  \t\t\t Up to date" << endl;
-                                    }else{
-                                        tty << TERMINAL_TEXT_COLOR_MAGENTA <<"  \t\t\t Not Up to date" << endl;
+                                if(reading_possible_local_file.is_open()){
+                                    int local_file_size = get_file_size(clientDeviceConnected->db_folder_path + "/" + fileMetadata.name);
+                                    if(fileMetadata.size != local_file_size ){
                                         is_file_already_up_to_date = false;
+                                    }else{
+                                        char *buffer_local_file = new char[local_file_size];                                    
+                                        reading_possible_local_file.read(buffer_local_file, local_file_size);
+
+                                        if( reading_possible_local_file.fail() ){
+                                            is_file_already_up_to_date = false;
+                                        }else{
+                                            if( compare_buffer_files( buffer, buffer_local_file, fileMetadata.size) == 0){
+                                                is_file_already_up_to_date = true;
+                                            }else{
+                                                is_file_already_up_to_date = false;
+                                            }
+                                        }
+
+                                        delete[] buffer_local_file;
                                     }
+
+                                    reading_possible_local_file.close();
+                                }else{
+                                    is_file_already_up_to_date = false;
                                 }
 
-                                delete[] buffer_local_file;
-                            }
-
-                            reading_possible_local_file.close();
-                        }else{
-                            is_file_already_up_to_date = false;
-                        }
-
-                        // Writing file in db
-                        if(!is_file_already_up_to_date){
-                            std::ofstream writing_file(clientDeviceConnected->db_folder_path + "/" + fileMetadata.name, ofstream::binary | ofstream::out | ofstream::trunc);
-                            writing_file.write(buffer, fileMetadata.size);                                                                
-                            if (writing_file.fail()) {
+                                // Writing file in db
+                                if(!is_file_already_up_to_date){
+                                    std::ofstream writing_file(clientDeviceConnected->db_folder_path + "/" + fileMetadata.name, ofstream::binary | ofstream::out | ofstream::trunc);
+                                    writing_file.write(buffer, fileMetadata.size);                                                                
+                                    if (writing_file.fail()) {
+                                        tty << TERMINAL_TEXT_COLOR_RED;
+                                        tty << "  ## Can't write file ";
+                                        tty << TERMINAL_TEXT_COLOR_CYAN;
+                                        tty << fileMetadata.name;
+                                        tty << TERMINAL_TEXT_COLOR_RED;
+                                        tty << " in DB folder of user ";
+                                        tty << TERMINAL_TEXT_COLOR_CYAN;
+                                        tty << clientDeviceConnected->userDataBag.login << endl;
+                                        tty << TERMINAL_TEXT_SETTING_RESET;
+                                    }
+                                    writing_file.close();
+                                }
+                            }else{
                                 tty << TERMINAL_TEXT_COLOR_RED;
-                                tty << "  ## Can't write file ";
+                                tty << "  ## Can't receive ";
                                 tty << TERMINAL_TEXT_COLOR_CYAN;
                                 tty << fileMetadata.name;
                                 tty << TERMINAL_TEXT_COLOR_RED;
-                                tty << " in DB folder of user ";
+                                tty << " data by ";
+                                tty << TERMINAL_TEXT_COLOR_BLUE;
+                                tty << "SYNC_SOCKET";
+                                tty << TERMINAL_TEXT_COLOR_RED;
+                                tty << " from user ";
                                 tty << TERMINAL_TEXT_COLOR_CYAN;
                                 tty << clientDeviceConnected->userDataBag.login << endl;
+                                tty << TERMINAL_TEXT_COLOR_RED;
+                                tty << "!" << endl;
                                 tty << TERMINAL_TEXT_SETTING_RESET;
                             }
-                            writing_file.close();
-                        }
 
-                            // // Write in temp file
-                            // string temp_file_path = clientDeviceConnected->temp_folder_path;
-                            // temp_file_path += "/";
-                            // temp_file_path += fileMetadata.name;
-                            // string file_path = clientDeviceConnected->db_folder_path + "/" + fileMetadata.name;
-                            // ofstream temp_writing_file(temp_file_path, ios::binary | ios::out | ios::trunc);
-                            // bool file_temp_error = false;
-                            // if(!temp_writing_file.is_open()){
-                            //     tty << TERMINAL_TEXT_COLOR_RED;
-                            //     tty << "  ## Can't open temp file ";
-                            //     tty << TERMINAL_TEXT_COLOR_CYAN;
-                            //     tty << temp_file_path;
-                            //     tty << TERMINAL_TEXT_COLOR_RED;
-                            //     tty << " of writing " << endl;
-                            //     tty << TERMINAL_TEXT_SETTING_RESET;
-                            //     file_temp_error = true;
-                            // }else{
-                            //     temp_writing_file.write(buffer, fileMetadata.size);
-
-                            //     string comparing_cmd = "cmp " + temp_file_path + " " + file_path;
-                            //     struct stat file_temp_info;                
-                            //     struct stat future_file_info; 
-                            //     int future_file_stat;               
-                            //     stat( temp_file_path.c_str(), &file_temp_info);
-                            //     future_file_stat = stat( file_path.c_str(), &future_file_info);
-                                
-                            //     int file_up_to_date;
-                                
-                            //     if(fileMetadata.size == 0 &&  file_temp_info.st_size == 0)
-                            //         file_up_to_date = 0;
-                            //     else
-                            //         file_up_to_date = system(comparing_cmd.c_str());
-
-                            //     if( future_file_stat != 0 )
-                            //         file_up_to_date = -1;
-
-                            //     if( file_up_to_date != 0  &&  !file_temp_error){
-                            // }
-                            // }
+                            delete[] buffer;
                         }else{
-                            tty << TERMINAL_TEXT_COLOR_RED;
-                            tty << "  ## Can't receive ";
-                            tty << TERMINAL_TEXT_COLOR_CYAN;
-                            tty << fileMetadata.name;
-                            tty << TERMINAL_TEXT_COLOR_RED;
-                            tty << " data by ";
-                            tty << TERMINAL_TEXT_COLOR_BLUE;
-                            tty << "SYNC_SOCKET";
-                            tty << TERMINAL_TEXT_COLOR_RED;
-                            tty << " from user ";
+                            tty << TERMINAL_TEXT_COLOR_WHITE;
+                            tty << "   <<< Deletation order: " << fileMetadata.name << " from ";
                             tty << TERMINAL_TEXT_COLOR_CYAN;
                             tty << clientDeviceConnected->userDataBag.login << endl;
-                            tty << TERMINAL_TEXT_COLOR_RED;
-                            tty << "!" << endl;
                             tty << TERMINAL_TEXT_SETTING_RESET;
-                        }
 
-                        delete[] buffer;
+                            // Deleting file 
+                            if( access((clientDeviceConnected->db_folder_path + "/" + fileMetadata.name).c_str(),  F_OK) != 0 ){                      
+                                tty << TERMINAL_TEXT_COLOR_RED;
+                                tty << "   ### Can't access to delete file: ";
+                                tty << TERMINAL_TEXT_SETTING_RESET;
+                                tty << (clientDeviceConnected->db_folder_path + "/" + fileMetadata.name).c_str();
+                                tty << TERMINAL_TEXT_COLOR_RED;
+                                tty << "!" << endl;
+                                tty << TERMINAL_TEXT_SETTING_RESET;
+                            }else{
+                                if( remove( (clientDeviceConnected->db_folder_path + "/" + fileMetadata.name).c_str() ) != 0 ){
+                                    tty << TERMINAL_TEXT_COLOR_RED;
+                                    tty << "   ### Can't delete file: ";
+                                    tty << TERMINAL_TEXT_SETTING_RESET;
+                                    tty << (clientDeviceConnected->db_folder_path + "/" + fileMetadata.name).c_str();
+                                    tty << TERMINAL_TEXT_COLOR_RED;
+                                    tty << "!" << endl;
+                                    tty << TERMINAL_TEXT_SETTING_RESET;
+                                }
+                            }
+                        }
+                    }else{
+                        // All up to date. Nothing to do here
                     }
                 }else{
                     tty << TERMINAL_TEXT_COLOR_RED;
