@@ -86,7 +86,6 @@ void *server_folder_watcher_module(void *clientDeviceConnected_arg) {
 
 
     while (clientDeviceConnected->is_connected) {
-
         int i = 0;
         while (i < len) {
     ttyT << " * Modified List:" << endl;
@@ -125,7 +124,7 @@ void *server_folder_watcher_module(void *clientDeviceConnected_arg) {
                         action = "deleted";
                     action = " " + action;
 
-                    if (event->mask & (IN_CLOSE_WRITE | IN_CREATE | IN_MOVED_TO) ) {
+                    if (event->mask & (IN_CLOSE_WRITE | IN_MOVED_TO) ) {
                         fileMetadata.should_delete_file = false;
                         clientDeviceConnected->modified_files_queue.push(fileMetadata);
 
@@ -262,7 +261,7 @@ void *client_folder_watcher_module(void *clientStateInformation_arg) {
 
                     // Print the name of the file that was modified, created, or deleted
                     //  Add modified file to modified queue. If file is deleted, flag should_delete is active
-                    if (event->mask & (IN_CLOSE_WRITE | IN_CREATE | IN_MOVED_TO)) {
+                    if (event->mask & (IN_CLOSE_WRITE | IN_MOVED_TO)) {
                         if( event->name)
                         fileMetadata.should_delete_file = false;
                         clientStateInformation->modifications_queue.push(fileMetadata);
@@ -307,13 +306,11 @@ off_t get_file_size(string file_path){
     return file_info.st_size;
 }
 
-
-
 long int compare_buffer_files( char *buffer1, char *buffer2, long int size ){
     int qtd_diferent_bytes = 0;
 
     for(int i = 0 ; i < size ; i++)
-        if( buffer1[i] == buffer2[i] )
+        if( buffer1[i] != buffer2[i] )
             qtd_diferent_bytes++;
     
     return qtd_diferent_bytes;

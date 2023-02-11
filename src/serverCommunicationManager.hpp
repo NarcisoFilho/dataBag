@@ -499,14 +499,19 @@ void *runNewSyncDataCommunicationSocket(void *clientDeviceConected_arg){
                             if(fileMetadata.size != local_file_size ){
                                 is_file_already_up_to_date = false;
                             }else{
-                                char *buffer_local_file = new char[local_file_size];    
-                                
+                                char *buffer_local_file = new char[local_file_size];                                    
                                 reading_possible_local_file.read(buffer_local_file, local_file_size);
-                                if( compare_buffer_files( buffer, buffer_local_file, fileMetadata.size) == 0)
-                                    is_file_already_up_to_date = true;
-                                else{
-                                    is_file_already_up_to_date = false;
 
+                                if( reading_possible_local_file.fail() ){
+                                    is_file_already_up_to_date = false;
+                                }else{
+                                    if( compare_buffer_files( buffer, buffer_local_file, fileMetadata.size) == 0){
+                                        is_file_already_up_to_date = true;
+                                        // tty << TERMINAL_TEXT_COLOR_MAGENTA <<"  \t\t\t Up to date" << endl;
+                                    }else{
+                                        tty << TERMINAL_TEXT_COLOR_MAGENTA <<"  \t\t\t Not Up to date" << endl;
+                                        is_file_already_up_to_date = false;
+                                    }
                                 }
 
                                 delete[] buffer_local_file;
