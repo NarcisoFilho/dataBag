@@ -316,5 +316,24 @@ long int compare_buffer_files( char *buffer1, char *buffer2, long int size ){
     return qtd_diferent_bytes;
 }
 
+string completePathByAliasPath(string alias){
+    string home_dir = getenv("HOME");
+    home_dir += '/';
+    string home_sign = "~/";
+    auto last_ocur = 0;
+    while((last_ocur = alias.find(home_sign,last_ocur)) != string::npos){
+        alias.replace( last_ocur, home_sign.length(), home_dir );
+        last_ocur += home_dir.length();
+    }
+    return alias;
+}
+
+string completePathByAliasPath(char *alias){
+    return completePathByAliasPath(string(alias));
+}
+
+string completePathByAliasPath(const char *alias){
+    return completePathByAliasPath(string(alias));
+}
 
 #endif  //__FILE_MANAGER_HPP

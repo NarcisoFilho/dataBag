@@ -14,13 +14,13 @@ void single_transfer(string server, string file_path, bool download){
     clientStateInformation.only_upload = !download;
 
     // Create INFO Data Communication Sockets
-    int info_data_communication_socket = socket(AF_INET, SOCK_STREAM, 0);
-    clientStateInformation.info_data_communication_socket = info_data_communication_socket;
+    int info_communication_socket = socket(AF_INET, SOCK_STREAM, 0);
+    clientStateInformation.info_communication_socket = info_communication_socket;
 
     int optval = 1;
-    setsockopt(info_data_communication_socket, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof(optval));
+    setsockopt(info_communication_socket, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof(optval));
 
-    if(info_data_communication_socket == -1)
+    if(info_communication_socket == -1)
         pError("\a  ##Error on INFO data communication socket creation!");
 
 
@@ -41,7 +41,7 @@ void single_transfer(string server, string file_path, bool download){
     server_sentinel_socket_addr.sin_addr = *((struct in_addr*)dataBag_server_host->h_addr_list[0]);
     bzero(&(server_sentinel_socket_addr.sin_zero), 8);
     
-    if(connect(info_data_communication_socket, (struct sockaddr *)&server_sentinel_socket_addr, sizeof(server_sentinel_socket_addr) ) < 0 )
+    if(connect(info_communication_socket, (struct sockaddr *)&server_sentinel_socket_addr, sizeof(server_sentinel_socket_addr) ) < 0 )
         pError("\a  ##Failure: No server return for attemp of INFO Data Communication Socket conection!");
 
     userTerminal_login(&clientStateInformation);
@@ -56,7 +56,7 @@ void single_transfer(string server, string file_path, bool download){
         if(clientStateInformation.only_upload == true){
             // Request
             clientRequest.requisition_type = CLIENT_DATAGRAM_ONLY_UPLOAD;
-            bytes_number = write(clientStateInformation.info_data_communication_socket, &clientRequest, REQUEST_DATAGRAM_SIZE);
+            bytes_number = write(clientStateInformation.info_communication_socket, &clientRequest, REQUEST_DATAGRAM_SIZE);
             if(bytes_number == -1){
                 cout << TERMINAL_TEXT_COLOR_RED;
                 cout << "\a\t  ## Couldn't contact server via ";

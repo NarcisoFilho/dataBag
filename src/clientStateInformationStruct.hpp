@@ -10,7 +10,7 @@
 #include "DatagramStructures.hpp"
 
 typedef struct ClientStateInformation{
-    int info_data_communication_socket;
+    int info_communication_socket;
     int sync_data_communication_socket;
     bool is_syncronization_active;
     bool is_user_logged;

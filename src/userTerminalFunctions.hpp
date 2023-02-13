@@ -16,7 +16,7 @@ void userTerminal_help(){
 }
 
 void userTerminal_login(ClientStateInformation *clientStateInformation){
-    int info_data_communication_socket = clientStateInformation->info_data_communication_socket;
+    int info_communication_socket = clientStateInformation->info_communication_socket;
     ServerRequestResponseDatagram serverResponse;
     ClientRequestDatagram clientRequest;
     clientRequest.requisition_type = CLIENT_REQUEST_LOGIN;
@@ -41,14 +41,14 @@ void userTerminal_login(ClientStateInformation *clientStateInformation){
     cout << TERMINAL_TEXT_SETTING_RESET;
     
     // Request
-    bytes_number = write(clientStateInformation->info_data_communication_socket, &clientRequest, REQUEST_DATAGRAM_SIZE);
+    bytes_number = write(clientStateInformation->info_communication_socket, &clientRequest, REQUEST_DATAGRAM_SIZE);
     if(bytes_number == -1){
         cout << "\a    ## Couldn't contact server ..." << endl;
         return;
     }
 
     // Response
-    bytes_number = read(clientStateInformation->info_data_communication_socket, &serverResponse, REQUEST_RESPONSE_DATAGRAM_SIZE );
+    bytes_number = read(clientStateInformation->info_communication_socket, &serverResponse, REQUEST_RESPONSE_DATAGRAM_SIZE );
     if(bytes_number == -1){
         cout << "\a    ## Couldn't receive answer from server ..." << endl;
         return;
@@ -82,7 +82,7 @@ void userTerminal_start(ClientStateInformation *clientStateInformation){
     clientRequest.requisition_type = CLIENT_REQUEST_START;
     
     // Request
-    bytes_number = write(clientStateInformation->info_data_communication_socket, &clientRequest, REQUEST_DATAGRAM_SIZE);
+    bytes_number = write(clientStateInformation->info_communication_socket, &clientRequest, REQUEST_DATAGRAM_SIZE);
     if(bytes_number == -1){
         cout << TERMINAL_TEXT_COLOR_RED;
         cout << "\a\t  ## Couldn't contact server via ";
@@ -95,7 +95,7 @@ void userTerminal_start(ClientStateInformation *clientStateInformation){
     }
 
     // Response
-    bytes_number = socket_read(clientStateInformation->info_data_communication_socket, &serverResponse, REQUEST_RESPONSE_DATAGRAM_SIZE );
+    bytes_number = socket_read(clientStateInformation->info_communication_socket, &serverResponse, REQUEST_RESPONSE_DATAGRAM_SIZE );
 
     if(bytes_number == -1){
         cout << TERMINAL_TEXT_COLOR_RED;
@@ -139,7 +139,7 @@ void userTerminal_stop(ClientStateInformation *clientStateInformation){
     clientRequest.requisition_type = CLIENT_REQUEST_STOP;
     
     // Request
-    bytes_number = write(clientStateInformation->info_data_communication_socket, &clientRequest, REQUEST_DATAGRAM_SIZE);
+    bytes_number = write(clientStateInformation->info_communication_socket, &clientRequest, REQUEST_DATAGRAM_SIZE);
     if(bytes_number == -1){
         cout << TERMINAL_TEXT_COLOR_RED;
         cout << "\a\t  ## Couldn't contact server via ";
@@ -152,7 +152,7 @@ void userTerminal_stop(ClientStateInformation *clientStateInformation){
     }
 
     // Response
-    bytes_number = socket_read(clientStateInformation->info_data_communication_socket, &serverResponse, REQUEST_RESPONSE_DATAGRAM_SIZE );
+    bytes_number = socket_read(clientStateInformation->info_communication_socket, &serverResponse, REQUEST_RESPONSE_DATAGRAM_SIZE );
 
     if(bytes_number == -1){
         cout << TERMINAL_TEXT_COLOR_RED;

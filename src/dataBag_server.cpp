@@ -29,9 +29,9 @@ int main(){
         string cmd = "mkdir -p ";
         cmd += TEMP_FOLDER;                        
         if( system(cmd.c_str()) == 0 )
-        cout << "  ** TEMP DIR Folder Created: " << TEMP_FOLDER << endl;
+            cout << "  ** TEMP DIR Folder Created: " << TEMP_FOLDER << endl;
         else
-        pError("  ## Can't creat TEMP Folder!");
+            pError("  ## Can't creat TEMP Folder!");
     }
 
     // Create Sentinel Socket

@@ -8,6 +8,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/stat.h>
+#include <errno.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -43,7 +44,7 @@ int main(int argc, char **argv){
       single_transfer(string(argv[1]), string(argv[3]), true);
       return 0;
     }else{
-      cout << TERMINAL_TEXT_COLOR_RED << "\a\t ##Command " << argv[2] << " not found!" << endl;
+      cout << TERMINAL_TEXT_COLOR_RED << "\a\t ## Command " << argv[2] << " not found!" << endl;
     }
   }
 
@@ -54,25 +55,11 @@ int main(int argc, char **argv){
   strcpy(TERMINAL_CLIENT_SYNC_MODULE, ((clientStateInformation.running_in_server_host) ? DEF_TERMINAL_CLIENT_SYNC_MODULE : "/dev/pts/3"));
 
   // // Create Essential Folders
-  struct stat st_sync_dir;
-  int status_sync_dir = stat(SYNCRONIZE_FOLDER, &st_sync_dir);
-  if(status_sync_dir != 0){
-    string cmd = "mkdir -p ";
-    cmd += SYNCRONIZE_FOLDER;                        
-    if( system(cmd.c_str()) == 0 )
-      cout << "  ** SYNC_DIR Folder Created: " << SYNCRONIZE_FOLDER << endl;
-    else
-      pError("  ## Can't creat sync Folder!");
+  if( mkdir(completePathByAliasPath("SYNCRONIZE_FOLDER").c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH) == 0 ){
+    cout << "  ** SYNC_DIR Folder Created: " << SYNCRONIZE_FOLDER << endl;
+  }else if(!(errno == EEXIST)){
+    pError("  ## Can't creat sync Folder!");
   }
-  if(status_temp_dir != 0){
-    string cmd = "mkdir -p ";
-    cmd += TEMP_FOLDER;                        
-    if( system(cmd.c_str()) == 0 )
-      cout << "  ** TEMP DIR Folder Created: " << TEMP_FOLDER << endl;
-    else
-      pError("  ## Can't creat TEMP Folder!");
-  }
-
   // Clear server terminals
   clearTerminal(TERMINAL_CLIENT_USER_TERMINAL);
   clearTerminal(TERMINAL_CLIENT_FOLDER_WATCHER);
@@ -84,11 +71,11 @@ int main(int argc, char **argv){
   cout << "  ** Inicializing ..." << endl;
 
   // Create INFO Data Communication Sockets
-  int info_data_communication_socket = socket(AF_INET, SOCK_STREAM, 0);
+  int info_communication_socket = socket(AF_INET, SOCK_STREAM, 0);
   int optval = 1;
-  setsockopt(info_data_communication_socket, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof(optval));
+  setsockopt(info_communication_socket, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof(optval));
 
-  if(info_data_communication_socket == -1)
+  if(info_communication_socket == -1)
     pError("\a  ##Error on INFO data communication socket creation!");
   else
     cout << "  ** INFO Data Socket created successfully ..." << endl;
@@ -115,9 +102,9 @@ int main(int argc, char **argv){
   server_sentinel_socket_addr.sin_addr = *((struct in_addr*)dataBag_server_host->h_addr_list[0]);
   bzero(&(server_sentinel_socket_addr.sin_zero), 8);
   
-  if(connect(info_data_communication_socket, (struct sockaddr *)&server_sentinel_socket_addr, sizeof(server_sentinel_socket_addr) ) < 0 )
+  if(connect(info_communication_socket, (struct sockaddr *)&server_sentinel_socket_addr, sizeof(server_sentinel_socket_addr) ) < 0 )
     pError("\a  ##Failure: No server return for attemp of INFO Data Communication Socket conection!");   
-
+  
   // TEMP socket to listen SYNC Data socket
   int temp_socket = socket(AF_INET, SOCK_STREAM, 0);
   struct sockaddr_in  temp_socket_addr;
@@ -156,7 +143,7 @@ int main(int argc, char **argv){
 
   // Aplication User Terminal
   pthread_t user_terminal_thread;
-  clientStateInformation.info_data_communication_socket = info_data_communication_socket;
+  clientStateInformation.info_communication_socket = info_communication_socket;
   clientStateInformation.is_syncronization_active = false;
   clientStateInformation.is_user_logged = false;
   clientStateInformation.is_connected = true;
@@ -174,7 +161,7 @@ int main(int argc, char **argv){
 
   // Close
   pthread_join(user_terminal_thread, NULL);
-  close(info_data_communication_socket);
+  close(info_communication_socket);
   close(sync_data_communication_socket);
   close(temp_socket);
   return 0;
