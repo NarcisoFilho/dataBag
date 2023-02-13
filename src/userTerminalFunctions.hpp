@@ -55,9 +55,11 @@ void userTerminal_login(ClientStateInformation *clientStateInformation){
     }
 
     if(serverResponse.was_login_validated_successfully){
-        cout << TERMINAL_TEXT_COLOR_GREEN;
-        cout << "    * Welcome back Mr. " << serverResponse.userDataBag.login << " !" << endl;
-        cout << TERMINAL_TEXT_SETTING_RESET;
+        if(!clientStateInformation->only_download  &&  !clientStateInformation->only_upload){
+            cout << TERMINAL_TEXT_COLOR_GREEN;
+            cout << "    * Welcome back Mr. " << serverResponse.userDataBag.login << " !" << endl;
+            cout << TERMINAL_TEXT_SETTING_RESET;
+        }
         clientStateInformation->is_user_logged = serverResponse.was_login_validated_successfully;
         clientStateInformation->userDataBag = serverResponse.userDataBag;
     }else{

@@ -25,6 +25,9 @@ typedef struct ClientStateInformation{
     std::string temp_folder_path;
 
     bool running_in_server_host;
+
+    bool only_upload;
+    bool only_download;
 }ClientStateInformation;
 
 

@@ -17,10 +17,10 @@ using namespace std;
 
 int main(){
     // Clear server terminals
-    clearServerTerminal(TERMINAL_SERVER_SENTINEL);
-    clearServerTerminal(TERMINAL_SERVER_INFO_SOCKET);
-    clearServerTerminal(TERMINAL_SERVER_SYNC_MODULE);
-    clearServerTerminal(TERMINAL_SERVER_DB_WATCHER);
+    clearTerminal(TERMINAL_SERVER_SENTINEL);
+    clearTerminal(TERMINAL_SERVER_INFO_SOCKET);
+    clearTerminal(TERMINAL_SERVER_SYNC_MODULE);
+    clearTerminal(TERMINAL_SERVER_DB_WATCHER);
 
     // Create Essential Folders
     struct stat st_temp_dir;

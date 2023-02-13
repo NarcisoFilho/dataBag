@@ -26,6 +26,8 @@
 #define CLIENT_REQUEST_STATUS                   4
 #define CLIENT_REQUEST_STOP                     5
 #define CLIENT_DATAGRAM_SYNC_STATE_LIST         6
+#define CLIENT_DATAGRAM_ONLY_UPLOAD             10
+#define CLIENT_DATAGRAM_ONLY_DOWLOAD            11
 
 #define SERVER_SYNC_ORDER_RECEIVE_DATAGRAM      7
 #define SERVER_SYNC_ORDER_SEND_DATAGRAM         8

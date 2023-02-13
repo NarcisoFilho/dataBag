@@ -24,6 +24,7 @@
 #include "SocketsOperation.hpp"
 #include "fileManager.hpp"
 #include "terminalHandle.hpp"
+#include "singleTranfer.hpp"
 
 using namespace std;
 
@@ -32,8 +33,18 @@ void *userTerminalThread(void*);
 void *syncronizationModuleThread(void*);
 
 int main(int argc, char **argv){
-  if(argc > 2){
-    pError("\a\t  Usage: dataBag [server_name]");
+  if(argc > 3){
+    pError("\a\t  Usage: dataBag [cmd] [server_name]");
+  }else if(argc == 3){
+    if( strcmp(argv[2],"upload") == 0){
+      single_transfer(string(argv[1]), string(argv[3]), false);
+      return 0;
+    }else if(  strcmp(argv[3],"download") == 0){
+      single_transfer(string(argv[1]), string(argv[3]), true);
+      return 0;
+    }else{
+      cout << TERMINAL_TEXT_COLOR_RED << "\a\t ##Command " << argv[2] << " not found!" << endl;
+    }
   }
 
   ClientStateInformation clientStateInformation;
@@ -44,9 +55,7 @@ int main(int argc, char **argv){
 
   // // Create Essential Folders
   struct stat st_sync_dir;
-  struct stat st_temp_dir;
   int status_sync_dir = stat(SYNCRONIZE_FOLDER, &st_sync_dir);
-  int status_temp_dir = stat(TEMP_FOLDER, &st_temp_dir);
   if(status_sync_dir != 0){
     string cmd = "mkdir -p ";
     cmd += SYNCRONIZE_FOLDER;                        
@@ -65,9 +74,9 @@ int main(int argc, char **argv){
   }
 
   // Clear server terminals
-  clearServerTerminal(TERMINAL_CLIENT_USER_TERMINAL);
-  clearServerTerminal(TERMINAL_CLIENT_FOLDER_WATCHER);
-  clearServerTerminal(TERMINAL_CLIENT_SYNC_MODULE);
+  clearTerminal(TERMINAL_CLIENT_USER_TERMINAL);
+  clearTerminal(TERMINAL_CLIENT_FOLDER_WATCHER);
+  clearTerminal(TERMINAL_CLIENT_SYNC_MODULE);
 
   // Print Welcome message
   cout << "======== DataBag: Take your data wherever you go ========" << endl;
@@ -151,6 +160,8 @@ int main(int argc, char **argv){
   clientStateInformation.is_syncronization_active = false;
   clientStateInformation.is_user_logged = false;
   clientStateInformation.is_connected = true;
+  clientStateInformation.only_download = false;
+  clientStateInformation.only_upload = false;
   strcpy(clientStateInformation.userDataBag.login, "No one logged in");
   strcpy(clientStateInformation.userDataBag.passwd, "No one logged in");
 
@@ -338,6 +349,8 @@ void *syncronizationModuleThread( void *clientStateInformation_arg ){
                 tty << TERMINAL_TEXT_COLOR_CYAN;
                 tty << "server" << endl;
                 tty << TERMINAL_TEXT_SETTING_RESET;
+                // sendMessageToTerminal(string("   >>> Metadata sended: ") + fileMetadata.name + " to server", tty);
+                // sendMessageToTerminal(tty, string("   >>> Metadata sended: $o to $t"), fileMetadata.name, string("server"), "");
                 // Open file in sync_dir folder
                 string file_path = clientStateInformation->root_folder_path + fileMetadata.name;
                 std::ifstream reading_file(file_path);
