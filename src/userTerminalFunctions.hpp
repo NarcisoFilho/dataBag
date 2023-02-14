@@ -242,7 +242,14 @@ void userTerminal_terminals_info(){
 }
 
 
+void userTerminal_upload(string file_path){
+    string file_name = file_path.substr(file_path.find_last_of("/"));
+    system(string("cp -f " + file_path + " ~/sync_dir/" + file_name).c_str());
+}
 
+void userTerminal_download(string file_name){
+    system(string("cp -f ~/sync_dir/" + file_name + " ~/Downloads").c_str());
+}
 
 
 #endif // __USER_TERMINAL_FUNCTIONS_HPP

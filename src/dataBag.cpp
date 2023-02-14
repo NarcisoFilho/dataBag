@@ -196,6 +196,14 @@ void *userTerminalThread( void *clientStateInformation_arg ){
       // userTerminal_terminal_clear();
     }else if(command == "terminals-info"){
       userTerminal_terminals_info();
+    }else if(command.find("upload") != string::npos){
+      string file_path;
+      cin >> file_path;
+      userTerminal_upload(file_path);
+    }else if(command.find("download") != string::npos){
+      string file_name;
+      cin >> file_name;
+      userTerminal_download(file_name);
     }else if(command == "quit"){
       clientStateInformation->is_connected = false;
       clientStateInformation->is_user_logged = false;
