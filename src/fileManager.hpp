@@ -19,6 +19,7 @@
 #include "ClientDeviceConected.hpp"
 #include "clientStateInformationStruct.hpp"
 #include "global_definitions.hpp"
+#include "OutputTerminal.hpp"
 
 using namespace std;
 
@@ -53,12 +54,10 @@ void print_queue(std::queue<FileMetadata> q, ofstream &tty){
 
 void *server_folder_watcher_module(void *clientDeviceConnected_arg) {
     ClientDeviceConnected *clientDeviceConnected = (ClientDeviceConnected*) clientDeviceConnected_arg;
-    ofstream tty(TERMINAL_SERVER_DB_WATCHER, ofstream::out | ofstream::app );
-    ofstream ttyT("/dev/pts/8", ofstream::out | ofstream::app );
+    OutputTerminal tty(TERMINAL_SERVER_DB_WATCHER);
 
     // Initializing modified files queue
-    tty << TERMINAL_TEXT_SETTING_RESET;
-    tty << "  ** Modified files queue initialized ..." << endl;
+    tty.print("  ** Modified files queue initialized ...");
 
     // Initialize inotify instance
     int fd = inotify_init();
@@ -74,23 +73,21 @@ void *server_folder_watcher_module(void *clientDeviceConnected_arg) {
     int len = read(fd, buffer, BUF_LEN);
 
     // Parse the events
-    tty << TERMINAL_TEXT_SETTING_RESET;
-    tty << "  ** DB: Server Folder Watcher Module initialized: ";
-    tty << TERMINAL_TEXT_COLOR_CYAN;
-    tty << clientDeviceConnected->userDataBag.login << endl;
-    tty << TERMINAL_TEXT_SETTING_RESET;
-    tty << "  \t> Path: ";
-    tty << TERMINAL_TEXT_COLOR_CYAN;
-    tty << clientDeviceConnected->db_folder_path << endl;
-    tty << TERMINAL_TEXT_SETTING_RESET;
-
+    // terminalPrint();
+    // tty << TERMINAL_TEXT_SETTING_RESET;
+    // tty << "  ** DB: Server Folder Watcher Module initialized: ";
+    // tty << TERMINAL_TEXT_COLOR_CYAN;
+    // tty << clientDeviceConnected->userDataBag.login << endl;
+    // tty << TERMINAL_TEXT_SETTING_RESET;
+    // tty << "  \t> Path: ";
+    // tty << TERMINAL_TEXT_COLOR_CYAN;
+    // tty << clientDeviceConnected->db_folder_path << endl;
+    // tty << TERMINAL_TEXT_SETTING_RESET;
+    tty.print("** DB: Server Folder Watcher Module initialized: $o  \t> Path: $t", clientDeviceConnected->userDataBag.login, clientDeviceConnected->db_folder_path, "test");
 
     while (clientDeviceConnected->is_connected) {
         int i = 0;
-        while (i < len) {
-    ttyT << " * Modified List:" << endl;
-    print_queue(clientDeviceConnected->modified_files_queue, ttyT);
-        
+        while (i < len) {        
             inotify_event *event = (inotify_event *) &buffer[i];
             if (event->len > 0) {
                 // Do nothing if is a avoid file
@@ -128,16 +125,18 @@ void *server_folder_watcher_module(void *clientDeviceConnected_arg) {
                         fileMetadata.should_delete_file = false;
                         clientDeviceConnected->modified_files_queue.push(fileMetadata);
 
-                        tty << TERMINAL_TEXT_COLOR_GREEN;
-                        tty << "  ++" << clientDeviceConnected->userDataBag.login << ": " << event->name << action << " (" << fileMetadata.size << " Bytes)" << endl;
-                        tty << TERMINAL_TEXT_SETTING_RESET; 
+                        // tty << TERMINAL_TEXT_COLOR_GREEN;
+                        // tty << "  ++" << clientDeviceConnected->userDataBag.login << ": " << event->name << action << " (" << fileMetadata.size << " Bytes)" << endl;
+                        // tty << TERMINAL_TEXT_SETTING_RESET; 
+                        tty.print(string("  ++") + clientDeviceConnected->userDataBag.login + ": " + event->name + action + " (" + to_string(fileMetadata.size) + " Bytes)", COLOR_GREEN);
                     } else if (event->mask & (IN_DELETE | IN_MOVED_FROM)) {
                         fileMetadata.should_delete_file = true;
                         clientDeviceConnected->modified_files_queue.push(fileMetadata);
 
-                        tty << TERMINAL_TEXT_COLOR_YELLOW;
-                        tty << "--" << clientDeviceConnected->userDataBag.login << ": " << event->name << action  << endl;
-                        tty << TERMINAL_TEXT_SETTING_RESET; 
+                        // tty << TERMINAL_TEXT_COLOR_YELLOW;
+                        // tty << "--" << clientDeviceConnected->userDataBag.login << ": " << event->name << action  << endl;
+                        // tty << TERMINAL_TEXT_SETTING_RESET; 
+                        tty.print(string("  --") + clientDeviceConnected->userDataBag.login + ": " + event->name + action + " (" + to_string(fileMetadata.size) + " Bytes)", COLOR_YELLOW);
                     }
                 }
             }
@@ -158,12 +157,13 @@ void *server_folder_watcher_module(void *clientDeviceConnected_arg) {
 void *client_folder_watcher_module(void *clientStateInformation_arg) {
     ClientStateInformation *clientStateInformation = (ClientStateInformation*) clientStateInformation_arg;
     string folderPath = SYNCRONIZE_FOLDER;
-    ofstream tty(TERMINAL_CLIENT_FOLDER_WATCHER, ofstream::out | ofstream::app);
-    ofstream ttyT("/dev/pts/9", ofstream::out | ofstream::app );
+    // ofstream tty(TERMINAL_CLIENT_FOLDER_WATCHER, ofstream::out | ofstream::app);
+    OutputTerminal tty(TERMINAL_CLIENT_FOLDER_WATCHER);
 
-    tty << TERMINAL_TEXT_COLOR_WHITE;
-    tty << "  ** Client Folder Watcher Module initialized ..." << endl;
-    tty << TERMINAL_TEXT_SETTING_RESET;
+    // tty << TERMINAL_TEXT_COLOR_WHITE;
+    // tty << "  ** Client Folder Watcher Module initialized ..." << endl;
+    // tty << TERMINAL_TEXT_SETTING_RESET;
+    tty.print("** Client Folder Watcher Module initialized ..." , "white");
 
     // Fix HOME folder name
     string home_dir = getenv("HOME");
@@ -197,16 +197,18 @@ void *client_folder_watcher_module(void *clientStateInformation_arg) {
         system(cleaning_sync_dir_cmd.c_str());
     }
 
-    tty << TERMINAL_TEXT_COLOR_WHITE;
-    tty << endl << "  ** Synchronization module prepared ..." << endl;
-    tty << TERMINAL_TEXT_SETTING_RESET;
+    // tty << TERMINAL_TEXT_COLOR_WHITE;
+    // tty << endl << "  ** Synchronization module prepared ..." << endl;
+    // tty << TERMINAL_TEXT_SETTING_RESET;
+    tty.print("  ** Synchronization module prepared ...", "white");
 
 
-    tty << TERMINAL_TEXT_COLOR_WHITE;
-    tty << "  ** Folder synchronized: ";
-    tty << TERMINAL_TEXT_COLOR_CYAN;
-    tty << clientStateInformation->root_folder_path << endl;
-    tty << TERMINAL_TEXT_SETTING_RESET;
+    // tty << TERMINAL_TEXT_COLOR_WHITE;
+    // tty << "  ** Folder synchronized: ";
+    // tty << TERMINAL_TEXT_COLOR_CYAN;
+    // tty << clientStateInformation->root_folder_path << endl;
+    // tty << TERMINAL_TEXT_SETTING_RESET;
+    tty.print("  ** Folder synchronized: $c " + clientStateInformation->root_folder_path);
 
     // Initialize inotify instance
     int fd = inotify_init();
@@ -224,8 +226,6 @@ void *client_folder_watcher_module(void *clientStateInformation_arg) {
     while (clientStateInformation->is_connected) {
         int i = 0;
         while (i < len) {
-    ttyT << " * Modified List:" << endl;
-    print_queue(clientStateInformation->modifications_queue, ttyT);
             inotify_event *event = (inotify_event *) &buffer[i];
             if (event->len > 0) { 
                 // Do nothing if is a avoid file
@@ -266,16 +266,18 @@ void *client_folder_watcher_module(void *clientStateInformation_arg) {
                         fileMetadata.should_delete_file = false;
                         clientStateInformation->modifications_queue.push(fileMetadata);
                         
-                        tty << TERMINAL_TEXT_COLOR_GREEN;
-                        tty << "  ++" << clientStateInformation->userDataBag.login << ": " << event->name << action << endl;
-                        tty << TERMINAL_TEXT_SETTING_RESET; 
+                        // tty << TERMINAL_TEXT_COLOR_GREEN;
+                        // tty << "  ++" << clientStateInformation->userDataBag.login << ": " << event->name << action << endl;
+                        // tty << TERMINAL_TEXT_SETTING_RESET; 
+                        tty.print(string("  ++") + clientStateInformation->userDataBag.login + ": " + event->name + action, "green");
                     } else if (event->mask & (IN_DELETE | IN_DELETE_SELF | IN_MOVED_FROM)) {
                         fileMetadata.should_delete_file = true;
                         clientStateInformation->modifications_queue.push(fileMetadata);
 
-                        tty << TERMINAL_TEXT_COLOR_YELLOW;
-                        tty << "  --" << clientStateInformation->userDataBag.login << ": " << event->name << action << endl;
-                        tty << TERMINAL_TEXT_SETTING_RESET;
+                        // tty << TERMINAL_TEXT_COLOR_YELLOW;
+                        // tty << "  --" << clientStateInformation->userDataBag.login << ": " << event->name << action << endl;
+                        // tty << TERMINAL_TEXT_SETTING_RESET;
+                        tty.print(string("  --") + clientStateInformation->userDataBag.login + ": " + event->name + action, "yellow");
                     }
                 }
             }

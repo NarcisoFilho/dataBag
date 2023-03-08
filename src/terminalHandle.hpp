@@ -4,8 +4,6 @@
 #include <iostream>
 #include <fstream>
 #include <list>
-#include <set>
-// #include <initialer_>
 #include <vector>
 #include <cstdarg>
 #include <string>
@@ -25,47 +23,41 @@ using namespace std;
 
 
 // Prototypes
-void clearTerminal(string);
+void terminalPrint(ofstream&, string );
+template<typename T1, typename T2, typename T3, typename T4> void terminalPrint(ofstream&, T1, T2, T3, T4);
 list<string> tokenizer(string);
+string getProbablyMainColor(list<string>);
+string getTerminalColorByAlias(string);
+string getTerminalColorByCode(string);
+void clearTerminal(string);
 
+// Functions
+void terminalPrint(ofstream &tty, string msg){
+    list<string> tokens = tokenizer(msg);
+    auto initialColor = getProbablyMainColor(tokens);
+    auto currrentColor = initialColor;
 
-void clearTerminal(string terminal){
-    string cmd = " clear > " + terminal;
-    system(cmd.c_str()); 
+    for(string currentToken : tokens){
+        if(currentToken[0] == '$'){
+            currrentColor = getTerminalColorByAlias(currentToken);
+        }else{
+            tty << currrentColor << currentToken << ' ';
+        }
+    }
+
+    tty << TERMINAL_TEXT_SETTING_RESET << endl;
 }
 
 template<typename T1, typename T2, typename T3, typename T4>
-void sendMessageToTerminal(ofstream &tty, T1 msg_arg, T2 object_arg, T3 target_arg, T4 source_arg = ""){
+void terminalPrint(ofstream &tty, T1 msg_arg, T2 object_arg, T3 target_arg, T4 source_arg = ""){
     string msg = msg_arg;
     string object = object_arg;
     string target = target_arg;
     string source = source_arg;
     
-    const set<string> operationMarkerTokens = {">>>", "<<<", "++", "--", ">##", "##<"};
-    list<string> tokens;
-    auto mainMsgColor = TERMINAL_TEXT_SETTING_RESET;
-    auto tokenColor = TERMINAL_TEXT_SETTING_RESET;
-
-    tokens = tokenizer(msg);
-    if( find(tokens.begin(), tokens.end(), "##") != tokens.end() ){
-        mainMsgColor = TERMINAL_TEXT_COLOR_RED;
-    }else if(find(tokens.begin(), tokens.end(), "**") != tokens.end()){
-        mainMsgColor = TERMINAL_TEXT_SETTING_RESET;
-    }else if(find(tokens.begin(), tokens.end(), "METADATA") != tokens.end()){
-        mainMsgColor = TERMINAL_TEXT_SETTING_RESET;
-    }else if(find(tokens.begin(), tokens.end(), "DELETATION") != tokens.end()){
-        mainMsgColor = TERMINAL_TEXT_COLOR_YELLOW;
-    }else if(find(tokens.begin(), tokens.end(), ">>>") != tokens.end()){
-        mainMsgColor = TERMINAL_TEXT_COLOR_GREEN;
-    }else if(find(tokens.begin(), tokens.end(), "<<<") != tokens.end()){
-        mainMsgColor = TERMINAL_TEXT_COLOR_GREEN;
-    }else if(find(tokens.begin(), tokens.end(), "++") != tokens.end()){
-        mainMsgColor = TERMINAL_TEXT_COLOR_GREEN;
-    }else if(find(tokens.begin(), tokens.end(), "--") != tokens.end()){
-        mainMsgColor = TERMINAL_TEXT_COLOR_YELLOW;
-    }else{
-        mainMsgColor = TERMINAL_TEXT_SETTING_RESET;
-    }
+    list<string> tokens = tokenizer(msg);
+    auto mainMsgColor = getProbablyMainColor(tokes);
+    auto tokenColor = mainMsgColor;
 
     for(string currentToken : tokens){
         if(currentToken == "$o"){
@@ -85,6 +77,28 @@ void sendMessageToTerminal(ofstream &tty, T1 msg_arg, T2 object_arg, T3 target_a
     }
 
     tty << TERMINAL_TEXT_SETTING_RESET << endl;
+}
+
+string getProbablyMainColor(list<string> tokens){
+    if( find(tokens.begin(), tokens.end(), "##") != tokens.end() ){
+        return TERMINAL_TEXT_COLOR_RED;
+    }else if(find(tokens.begin(), tokens.end(), "**") != tokens.end()){
+        return TERMINAL_TEXT_SETTING_RESET;
+    }else if(find(tokens.begin(), tokens.end(), "METADATA") != tokens.end()){
+        return TERMINAL_TEXT_SETTING_RESET;
+    }else if(find(tokens.begin(), tokens.end(), "DELETATION") != tokens.end()){
+        return TERMINAL_TEXT_COLOR_YELLOW;
+    }else if(find(tokens.begin(), tokens.end(), ">>>") != tokens.end()){
+        return TERMINAL_TEXT_COLOR_GREEN;
+    }else if(find(tokens.begin(), tokens.end(), "<<<") != tokens.end()){
+        return TERMINAL_TEXT_COLOR_GREEN;
+    }else if(find(tokens.begin(), tokens.end(), "++") != tokens.end()){
+        return TERMINAL_TEXT_COLOR_GREEN;
+    }else if(find(tokens.begin(), tokens.end(), "--") != tokens.end()){
+        return TERMINAL_TEXT_COLOR_YELLOW;
+    }else{
+        return TERMINAL_TEXT_SETTING_RESET;
+    }
 }
 
 string getTerminalColorByAlias(string color_alias){
@@ -108,63 +122,30 @@ string getTerminalColorByAlias(string color_alias){
     return color_alias;
 }
 
-int getMessageArgumentsNumber(string msg){
-    int num_args = 0;
-    for( int i = 0 ; i < msg.size() ; i++)
-        if( msg[i] == '%')
-            if( msg[max(0,i-1)] != '%' && msg[min((int)msg.size(),i+1)] != '%' )
-                num_args++;
-
-    return num_args;
+string getTerminalColorByCode(string code){
+    if(code == "$bk"){
+        return TERMINAL_TEXT_COLOR_BLACK;
+    }else if(code == "$r"){
+        return TERMINAL_TEXT_COLOR_RED;
+    }else if(code == "$g"){
+        return TERMINAL_TEXT_COLOR_GREEN;
+    }else if(code == "$lg"){
+        return TERMINAL_TEXT_COLOR_LIGHT_GREEN;
+    }else if(code == "$y"){
+        return TERMINAL_TEXT_COLOR_YELLOW;
+    }else if(code == "$b"){
+        return TERMINAL_TEXT_COLOR_BLUE;
+    }else if(code == "$m"){
+        return TERMINAL_TEXT_COLOR_MAGENTA;
+    }else if(code == "$c"){
+        return TERMINAL_TEXT_COLOR_CYAN;
+    }else if(code == "$w"){
+        return TERMINAL_TEXT_COLOR_WHITE;
+    }else{
+        return TERMINAL_TEXT_SETTING_RESET;
+    }
 }
-// void sendMessageToTerminal(ofstream &tty, char *mainColor, char *message, ...){
-//     string message_s = message;
-//     string mainColor_s = getTerminalColorByAlias(string(mainColor));
-//     list<string> tokens = tokenizer(message_s);
-//     int nmr_args = getMessageArgumentsNumber(message_s);
-//     va_list args;
-    
-//     va_start(args, nmr_args);
 
-//     auto tokenColor = mainColor_s;
-//     for(string currentToken : tokens){
-//         tokenColor = mainColor_s;
-//         if(currentToken == "%bk"){
-//             currentToken = va_arg(args, char*);
-//             tokenColor = TERMINAL_TEXT_COLOR_BLACK;
-//         }else if(currentToken == "%r"){
-//             currentToken = va_arg(args, char*);
-//             tokenColor = TERMINAL_TEXT_COLOR_RED;
-//         }else if(currentToken == "%g"){
-//             currentToken = va_arg(args, char*);
-//             tokenColor = TERMINAL_TEXT_COLOR_GREEN;
-//         }else if(currentToken == "%lg"){
-//             currentToken = va_arg(args, char*);
-//             tokenColor = TERMINAL_TEXT_COLOR_LIGHT_GREEN;
-//         }else if(currentToken == "%y"){
-//             currentToken = va_arg(args, char*);
-//             tokenColor = TERMINAL_TEXT_COLOR_YELLOW;
-//         }else if(currentToken == "%b"){
-//             currentToken = va_arg(args, char*);
-//             tokenColor = TERMINAL_TEXT_COLOR_BLUE;
-//         }else if(currentToken == "%m"){
-//             currentToken = va_arg(args, char*);
-//             tokenColor = TERMINAL_TEXT_COLOR_MAGENTA;
-//         }else if(currentToken == "%c"){
-//             currentToken = va_arg(args, char*);
-//             tokenColor = TERMINAL_TEXT_COLOR_CYAN;
-//         }else if(currentToken == "%w"){
-//             currentToken = va_arg(args, char*);
-//             tokenColor = TERMINAL_TEXT_COLOR_WHITE;
-//         }
-        
-//         tty << tokenColor << currentToken << ' ';
-//     }
-
-//     va_end(args);
-
-//     tty << TERMINAL_TEXT_SETTING_RESET << endl;
-// }
 
 list<string> tokenizer(string msg){
     list<string> tokens;
@@ -178,6 +159,11 @@ list<string> tokenizer(string msg){
     }
 
     return tokens;
+}
+
+void clearTerminal(string terminal){
+    string cmd = " clear > " + terminal;
+    system(cmd.c_str()); 
 }
 
 #endif // __TERMINAL_HANDLE_HPP

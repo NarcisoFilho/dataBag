@@ -386,25 +386,25 @@ void *runNewSyncDataCommunicationSocket(void *clientDeviceConected_arg){
                 // Send metadata to client
                 nmr_bytes = write(clientDeviceConnected->sync_socket_fd, (void*) &fileMetadata, sizeof(fileMetadata));
                 if(nmr_bytes != -1){
-                    tty << TERMINAL_TEXT_COLOR_WHITE;
-                    tty << "   >>> Metadata sended: " << fileMetadata.name;
-                    tty << " to ";
-                    tty << TERMINAL_TEXT_COLOR_CYAN;
-                    tty << clientDeviceConnected->userDataBag.login << endl;
-                    tty << TERMINAL_TEXT_SETTING_RESET;
-                    // sendMessageToTerminal( tty, "   >>> METADATA sended: $o to $t", fileMetadata.name, clientDeviceConnected->userDataBag.login, "");
+                    // tty << TERMINAL_TEXT_COLOR_WHITE;
+                    // tty << "   >>> Metadata sended: " << fileMetadata.name;
+                    // tty << " to ";
+                    // tty << TERMINAL_TEXT_COLOR_CYAN;
+                    // tty << clientDeviceConnected->userDataBag.login << endl;
+                    // tty << TERMINAL_TEXT_SETTING_RESET;
+                    terminalPrint( tty, "   >>> METADATA sended: $o to $t", fileMetadata.name, clientDeviceConnected->userDataBag.login, "");
 
                 }else{
-                    tty << TERMINAL_TEXT_COLOR_RED;
-                    tty << "  ## Can't send metadata by ";
-                    tty << TERMINAL_TEXT_COLOR_BLUE;
-                    tty << "SYNC_SOCKET";
-                    tty << TERMINAL_TEXT_COLOR_RED;
-                    tty << " to user ";
-                    tty << TERMINAL_TEXT_COLOR_CYAN;
-                    tty << clientDeviceConnected->userDataBag.login << endl;
-                    tty << TERMINAL_TEXT_SETTING_RESET;
-                    // sendMessageToTerminal( tty, "   ## Can't send metadata by $s to user $t", "", fileMetadata.name, clientDeviceConnected->userDataBag.login);
+                    // tty << TERMINAL_TEXT_COLOR_RED;
+                    // tty << "  ## Can't send metadata by ";
+                    // tty << TERMINAL_TEXT_COLOR_BLUE;
+                    // tty << "SYNC_SOCKET";
+                    // tty << TERMINAL_TEXT_COLOR_RED;
+                    // tty << " to user ";
+                    // tty << TERMINAL_TEXT_COLOR_CYAN;
+                    // tty << clientDeviceConnected->userDataBag.login << endl;
+                    // tty << TERMINAL_TEXT_SETTING_RESET;
+                    terminalPrint( tty, "   ## Can't send metadata by $s to user $t", "", fileMetadata.name, clientDeviceConnected->userDataBag.login);
                 }
                 
                 if(!fileMetadata.should_delete_file){
@@ -413,28 +413,27 @@ void *runNewSyncDataCommunicationSocket(void *clientDeviceConected_arg){
                     if(reading_file.is_open()){
                         reading_file.read(buffer, fileMetadata.size);
                     }else{
-                        tty << TERMINAL_TEXT_COLOR_RED;
-                        tty << "  ## Can't open file ";
-                        tty << TERMINAL_TEXT_COLOR_CYAN;
-                        tty << fileMetadata.name;
-                        tty << TERMINAL_TEXT_COLOR_RED;
-                        tty << " of user DB ";
-                        tty << TERMINAL_TEXT_COLOR_CYAN;
-                        tty << clientDeviceConnected->userDataBag.login << endl;
-                        tty << TERMINAL_TEXT_SETTING_RESET;
-                        // sendMessageToTerminal( tty, "   ## Can't open file $o of user DB $s", fileMetadata.name, clientDeviceConnected->userDataBag.login, "");
+                        // tty << TERMINAL_TEXT_COLOR_RED;
+                        // tty << "  ## Can't open file ";
+                        // tty << TERMINAL_TEXT_COLOR_CYAN;
+                        // tty << fileMetadata.name;
+                        // tty << TERMINAL_TEXT_COLOR_RED;
+                        // tty << " of user DB ";
+                        // tty << TERMINAL_TEXT_COLOR_CYAN;
+                        // tty << clientDeviceConnected->userDataBag.login << endl;
+                        // tty << TERMINAL_TEXT_SETTING_RESET;
+                        terminalPrint( tty, "   ## Can't open file $o of user DB $s", fileMetadata.name, clientDeviceConnected->userDataBag.login, "");
                     }
 
-                    
                     // Send Data File to Cliente
                     nmr_bytes = write(clientDeviceConnected->sync_socket_fd, (void*)buffer, fileMetadata.size);
                     if( nmr_bytes != -1 ){
-                        tty << TERMINAL_TEXT_COLOR_GREEN;
-                        tty << "   >>> " << fileMetadata.name << "(" <<  nmr_bytes << " Bytes) "<< " sended to ";
-                        tty << TERMINAL_TEXT_COLOR_CYAN;
-                        tty << clientDeviceConnected->userDataBag.login << endl;
-                        tty << TERMINAL_TEXT_SETTING_RESET;
-                        // sendMessageToTerminal( tty,  string("   >>> Sended file $o :") +  to_string(nmr_bytes) + " Bytes sended to $t", fileMetadata.name, "", clientDeviceConnected->userDataBag.login);
+                        // tty << TERMINAL_TEXT_COLOR_GREEN;
+                        // tty << "   >>> " << fileMetadata.name << "(" <<  nmr_bytes << " Bytes) "<< " sended to ";
+                        // tty << TERMINAL_TEXT_COLOR_CYAN;
+                        // tty << clientDeviceConnected->userDataBag.login << endl;
+                        // tty << TERMINAL_TEXT_SETTING_RESET;
+                        terminalPrint( tty,  string("   >>> Sended file $o :") +  to_string(nmr_bytes) + " Bytes sended to $t", fileMetadata.name, "", clientDeviceConnected->userDataBag.login);
                     }else{
                         tty << TERMINAL_TEXT_COLOR_RED;
                         tty << "  ## Can't send ";
@@ -449,7 +448,7 @@ void *runNewSyncDataCommunicationSocket(void *clientDeviceConected_arg){
                         tty << TERMINAL_TEXT_COLOR_CYAN;
                         tty << clientDeviceConnected->userDataBag.login << endl;
                         tty << TERMINAL_TEXT_SETTING_RESET;
-                        // sendMessageToTerminal( tty,    "## Can't send $o data by $o" +  to_string(nmr_bytes) + " Bytes sended to $t", fileMetadata.name, "", clientDeviceConnected->userDataBag.login);
+                        // terminalPrint( tty,    "## Can't send $o data by $o" +  to_string(nmr_bytes) + " Bytes sended to $t", fileMetadata.name, "", clientDeviceConnected->userDataBag.login);
                     }
 
                     delete[] buffer;

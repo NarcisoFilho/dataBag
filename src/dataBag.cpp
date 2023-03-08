@@ -338,14 +338,13 @@ void *syncronizationModuleThread( void *clientStateInformation_arg ){
               tty << TERMINAL_TEXT_SETTING_RESET;
             }else{
               if(!fileMetadata.should_delete_file){
-                tty << TERMINAL_TEXT_COLOR_WHITE;
-                tty << "   >>> Metadata sended: " << fileMetadata.name;
-                tty << " to ";
-                tty << TERMINAL_TEXT_COLOR_CYAN;
-                tty << "server" << endl;
-                tty << TERMINAL_TEXT_SETTING_RESET;
-                // sendMessageToTerminal(string("   >>> Metadata sended: ") + fileMetadata.name + " to server", tty);
-                // sendMessageToTerminal(tty, string("   >>> Metadata sended: $o to $t"), fileMetadata.name, string("server"), "");
+                // tty << TERMINAL_TEXT_COLOR_WHITE;
+                // tty << "   >>> Metadata sended: " << fileMetadata.name;
+                // tty << " to ";
+                // tty << TERMINAL_TEXT_COLOR_CYAN;
+                // tty << "server" << endl;
+                // tty << TERMINAL_TEXT_SETTING_RESET;
+                terminalPrint(tty, string("   >>> Metadata sended: $o to $t"), fileMetadata.name, string("server"), "");
                 // Open file in sync_dir folder
                 string file_path = clientStateInformation->root_folder_path + fileMetadata.name;
                 std::ifstream reading_file(file_path);
