@@ -24,7 +24,7 @@ using namespace std;
 
 // Prototypes
 void terminalPrint(ofstream&, string );
-template<typename T1, typename T2, typename T3, typename T4> void terminalPrint(ofstream&, T1, T2, T3, T4);
+template<typename T1, typename T2, typename T3, typename T4> void terminalPrint(ofstream&, T1, T2, T3, T4="");
 list<string> tokenizer(string);
 string getProbablyMainColor(list<string>);
 string getTerminalColorByAlias(string);
@@ -49,14 +49,14 @@ void terminalPrint(ofstream &tty, string msg){
 }
 
 template<typename T1, typename T2, typename T3, typename T4>
-void terminalPrint(ofstream &tty, T1 msg_arg, T2 object_arg, T3 target_arg, T4 source_arg = ""){
+void terminalPrint(ofstream &tty, T1 msg_arg, T2 object_arg, T3 target_arg, T4 source_arg){
     string msg = msg_arg;
     string object = object_arg;
     string target = target_arg;
     string source = source_arg;
     
     list<string> tokens = tokenizer(msg);
-    auto mainMsgColor = getProbablyMainColor(tokes);
+    auto mainMsgColor = getProbablyMainColor(tokens);
     auto tokenColor = mainMsgColor;
 
     for(string currentToken : tokens){

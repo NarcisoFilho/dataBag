@@ -41,13 +41,4 @@ struct SyncList{
     int num_files;
 };
 
-const string REQUESTS_NAMES[]{
-    "CLIENT_REQUEST_QUIT",    
-    "CLIENT_REQUEST_LOGIN",   
-    "CLIENT_REQUEST_REGISTER",
-    "CLIENT_REQUEST_START",   
-    "CLIENT_REQUEST_STATUS",  
-    "CLIENT_REQUEST_STOP"    
-};
-
 #endif // __DATAGRAM_STRUCTURES_HPP

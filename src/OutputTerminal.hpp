@@ -28,8 +28,9 @@ class OutputTerminal{
     public:
     OutputTerminal(string);
     ~OutputTerminal();
-    void print(string msg);
+    void print(string);
     void print(string, string);
+    void printInline(string, string);
     template<typename T1, typename T2, typename T3, typename T4> void print(T1, T2, T3, T4 source_arg = "");
 
     private:
@@ -42,11 +43,12 @@ class OutputTerminal{
 
 OutputTerminal::OutputTerminal(string terminalName){
     this->terminalName = terminalName;
-    this->tty.open(this->terminalName, ofstream::out | ofstream::app);
+    // this->tty.open(this->terminalName, ofstream::out | ofstream::app);
+    #define tty cout;
 }
 
 OutputTerminal::~OutputTerminal(){
-    this->tty.close();
+    // this->tty.close();
 }
 
 void OutputTerminal::print(string msg){
@@ -65,20 +67,24 @@ void OutputTerminal::print(string msg){
 }
 
 void OutputTerminal::print(string msg, string color){
-    this->currentColor = this->getTerminalColorByAlias(color);        
-    tty << this->currentColor << msg;
+    this->printInline(msg, color);
     tty << SETTING_RESET << endl;
 }
 
+void OutputTerminal::printInline(string msg, string color){
+    this->currentColor = this->getTerminalColorByAlias(color);        
+    tty << this->currentColor << msg;
+}
+
 template<typename T1, typename T2, typename T3, typename T4>
-void OutputTerminal::print(T1 msg_arg, T2 object_arg, T3 target_arg, T4 source_arg = ""){
+void OutputTerminal::print(T1 msg_arg, T2 object_arg, T3 target_arg, T4 source_arg){
     string msg = msg_arg;
     string object = object_arg;
     string target = target_arg;
     string source = source_arg;
     
     list<string> tokens = this->tokenizer(msg);
-    auto mainMsgColor = this->getProbablyMainColor(tokes);
+    auto mainMsgColor = this->getProbablyMainColor(tokens);
     this->currentColor = mainMsgColor;
 
     for(string currentToken : tokens){
@@ -117,6 +123,8 @@ list<string> OutputTerminal::tokenizer(string msg){
 }
 
 string OutputTerminal::getProbablyMainColor(list<string> tokens){
+    string mainColor = SETTING_RESET;
+    
     for( auto it = tokens.begin(); it != tokens.end(); it++){
         if(*it=="##" || *it=="###")
             return COLOR_RED;
@@ -126,9 +134,9 @@ string OutputTerminal::getProbablyMainColor(list<string> tokens){
             return COLOR_YELLOW;
         else if(*it==">>>" || *it=="<<<" || *it =="++" || *it =="+++")
             return COLOR_GREEN;
-        else
-            return SETTING_RESET;
     }
+    
+    return mainColor;
 }
 
 string OutputTerminal::getTerminalColorByAlias(string color_alias){

@@ -21,6 +21,8 @@
 #include "fileManager.hpp"
 #include "SocketsOperation.hpp"
 #include "terminalHandle.hpp"
+#include "OutputTerminal.hpp"
+#include "ClientsRequests.hpp"
 
 using namespace std;
 
@@ -38,38 +40,47 @@ void *serverSentinelModule(void *servers_sentinel_socket_arg){
     struct sockaddr_in info_data_communication_socket_addr;
     socklen_t info_data_communication_socket_addr_length = sizeof(struct sockaddr_in);
     int info_data_communication_socket;
-    ofstream tty(TERMINAL_SERVER_SENTINEL, ofstream::out | ofstream::app);
+    // ofstream tty(TERMINAL_SERVER_SENTINEL, ofstream::out | ofstream::app);
+    OutputTerminal tty(TERMINAL_SERVER_SENTINEL);
 
-  
     while(true) {
         // Listen
         if (listen(servers_sentinel_socket, SENTINEL_SOCKET_QUEUE_CAPACITY) == -1){
-            tty << TERMINAL_TEXT_COLOR_RED;
-            tty << "\a### Failure in listen for connection!" << endl;
-            tty << TERMINAL_TEXT_SETTING_RESET;
+            // tty << TERMINAL_TEXT_COLOR_RED;
+            // tty << "\a### Failure in listen for connection!" << endl;
+            // tty << TERMINAL_TEXT_SETTING_RESET;
+            tty.print("\a### Failure in listen for connection!", "red");
+
         }else{
-            tty << TERMINAL_TEXT_COLOR_WHITE;
-            tty << "  ** Awaiting for connection attempt in port ..." << endl;
-            tty << TERMINAL_TEXT_SETTING_RESET;
+            // tty << TERMINAL_TEXT_COLOR_WHITE;
+            // tty << "  ** Awaiting for connection attempt in port ..." << endl;
+            // tty << TERMINAL_TEXT_SETTING_RESET;
+            tty.print("** Awaiting for connection attempt in port ...");
         }
 
         // Accept
         info_data_communication_socket = accept(servers_sentinel_socket, (struct sockaddr *)&info_data_communication_socket_addr, &info_data_communication_socket_addr_length);
 
         if (info_data_communication_socket == -1){
-            tty << TERMINAL_TEXT_COLOR_RED;
-            tty << "\a### Failure in accept connection!" << endl;
-            tty << TERMINAL_TEXT_SETTING_RESET;
+            // tty << TERMINAL_TEXT_COLOR_RED;
+            // tty << "\a### Failure in accept connection!" << endl;
+            // tty << TERMINAL_TEXT_SETTING_RESET;
+            tty.print("\a### Failure in accept connection!");
         }else{
-            tty << TERMINAL_TEXT_COLOR_GREEN;
-            tty << "\t  ** Connection established: " << endl;
-            tty << "\t\t* Port: " << info_data_communication_socket_addr.sin_port << endl;
-            tty << "\t\t* Address: " << info_data_communication_socket_addr.sin_addr.s_addr << endl;
-            tty << "\t\t* Address Family: " << info_data_communication_socket_addr.sin_family << endl;
-            tty << "\t\t* Address Length: " << info_data_communication_socket_addr_length << endl;
-            tty << TERMINAL_TEXT_SETTING_RESET;
-
+            // tty << TERMINAL_TEXT_COLOR_GREEN;
+            // tty << "\t  ** Connection established: " << endl;
+            // tty << "\t\t* Port: " << info_data_communication_socket_addr.sin_port << endl;
+            // tty << "\t\t* Address: " << info_data_communication_socket_addr.sin_addr.s_addr << endl;
+            // tty << "\t\t* Address Family: " << info_data_communication_socket_addr.sin_family << endl;
+            // tty << "\t\t* Address Length: " << info_data_communication_socket_addr_length << endl;
+            // tty << TERMINAL_TEXT_SETTING_RESET;
+            tty.print("\t** Connection established: ", "green");
+            tty.print(string("\t\t* Port: ") +  to_string(info_data_communication_socket_addr.sin_port), "green");
+            tty.print(string("\t\t* Address: ") +  to_string(info_data_communication_socket_addr.sin_addr.s_addr), "green");
+            tty.print(string("\t\t* Address Family: ") +  to_string(info_data_communication_socket_addr.sin_family), "green");
+            tty.print(string("\t\t* Address Length: ") +  to_string(info_data_communication_socket_addr_length), "green");
             // pthread_t registerNewDataCommunicationSocket_thread;
+            
             ClientDeviceConnected clientDeviceConnected;
             clientDeviceConnected.client_device_address_info = info_data_communication_socket_addr;
             clientDeviceConnected.info_socket_fd = info_data_communication_socket;
@@ -87,24 +98,26 @@ void *runNewInfoDataCommunicationSocket(void *clientDeviceConected_arg){
     ClientDeviceConnected clientDeviceConnected = *((ClientDeviceConnected *)clientDeviceConected_arg);
     clientDeviceConnected.login_validated = false;
     clientDeviceConnected.is_connected = true;
-    ofstream tty(TERMINAL_SERVER_INFO_SOCKET, ofstream::out | ofstream::app);
+    // ofstream tty(TERMINAL_SERVER_INFO_SOCKET, ofstream::out | ofstream::app);
+    OutputTerminal tty(TERMINAL_SERVER_INFO_SOCKET);
 
     // SYNC Data Socket Creation
     clientDeviceConnected.sync_socket_fd = socket(AF_INET, SOCK_STREAM, 0);
     if(clientDeviceConnected.sync_socket_fd == -1){
-        tty << TERMINAL_TEXT_COLOR_RED;
-        tty << "\a  ##Error on SYNC data communication socket creation!" << endl;
-        tty << TERMINAL_TEXT_SETTING_RESET;
+        // tty << TERMINAL_TEXT_COLOR_RED;
+        // tty << "\a  ##Error on SYNC data communication socket creation!" << endl;
+        // tty << TERMINAL_TEXT_SETTING_RESET;
+        tty.print("\a  ##Error on SYNC data communication socket creation!");
         disconect_client_device(&clientDeviceConnected);
         return NULL;
     }else{
-        tty << TERMINAL_TEXT_SETTING_RESET;
-        tty << "  ** Sync Data Socket created successfully ..." << endl;
+        // tty << TERMINAL_TEXT_SETTING_RESET;
+        // tty << "  ** Sync Data Socket created successfully ..." << endl;
+        tty.print("  ** Sync Data Socket created successfully ...");
     }
     
     int optval = 1;
     setsockopt(clientDeviceConnected.sync_socket_fd, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof(optval));
-
 
     clientDeviceConnected.client_device_address_sync = clientDeviceConnected.client_device_address_info;
     clientDeviceConnected.client_device_address_sync.sin_port = htons(CLIENT_RECEIVE_CONNECTION_PORT);
@@ -120,21 +133,25 @@ void *runNewInfoDataCommunicationSocket(void *clientDeviceConected_arg){
     }while(i);
             
     if (connect_result == -1){
-        tty << TERMINAL_TEXT_COLOR_RED;
-        tty << "  ## Error to connect sync socket:" << endl;
-        tty << "  \t# Client Address: ";
-        tty << TERMINAL_TEXT_COLOR_CYAN;
-        tty << clientDeviceConnected.client_device_address_sync.sin_addr.s_addr << endl;
-        tty << TERMINAL_TEXT_SETTING_RESET;
-        tty << "  \t# Client Port: ";
-        tty << TERMINAL_TEXT_COLOR_CYAN;
-        tty << clientDeviceConnected.client_device_address_sync.sin_port << endl;
-        tty << TERMINAL_TEXT_SETTING_RESET;
+        // tty << TERMINAL_TEXT_COLOR_RED;
+        // tty << "  ## Error to connect sync socket:" << endl;
+        // tty << "  \t# Client Address: ";
+        // tty << TERMINAL_TEXT_COLOR_CYAN;
+        // tty << clientDeviceConnected.client_device_address_sync.sin_addr.s_addr << endl;
+        // tty << TERMINAL_TEXT_SETTING_RESET;
+        // tty << "  \t# Client Port: ";
+        // tty << TERMINAL_TEXT_COLOR_CYAN;
+        // tty << clientDeviceConnected.client_device_address_sync.sin_port << endl;
+        // tty << TERMINAL_TEXT_SETTING_RESET;
+        tty.print("\a  ## Error to connect sync socket:");
+        tty.print(string("\t# Client Address: $c ") + to_string(clientDeviceConnected.client_device_address_sync.sin_addr.s_addr));
+        tty.print(string("\t# Client Port: $c ") + to_string(clientDeviceConnected.client_device_address_sync.sin_port));
         disconect_client_device(&clientDeviceConnected);
         return NULL;
     }else{
-        tty << TERMINAL_TEXT_SETTING_RESET;
-        tty << "  ** Sync Data Socket connected successfully ..." << endl;
+        // tty << TERMINAL_TEXT_SETTING_RESET;
+        // tty << "  ** Sync Data Socket connected successfully ..." << endl;
+        tty.print("\t  ** Sync Data Socket connected successfully ...");
     }
 
     // Waiting Client Operation Requisition
@@ -145,61 +162,63 @@ void *runNewInfoDataCommunicationSocket(void *clientDeviceConected_arg){
         // Fetch client requisition
         nmr_bytes = socket_read(clientDeviceConnected.info_socket_fd, &clientRequestDatagram, REQUEST_DATAGRAM_SIZE);
         if( nmr_bytes == -1 ){
-            tty << TERMINAL_TEXT_COLOR_RED;
-            tty << "  ## Can't receive request";
-            tty << TERMINAL_TEXT_COLOR_CYAN;
-            tty << TERMINAL_TEXT_COLOR_RED;
-            tty << " request by ";
-            tty << TERMINAL_TEXT_COLOR_BLUE;
-            tty << "INFO_SOCKET";
-            tty << TERMINAL_TEXT_COLOR_RED;
-            tty << " from user ";
-            tty << TERMINAL_TEXT_COLOR_CYAN;
-            tty << clientDeviceConnected.userDataBag.login;
-            tty << TERMINAL_TEXT_COLOR_RED;
-            tty << "!" << endl;
-            tty << TERMINAL_TEXT_SETTING_RESET;
+            // tty << TERMINAL_TEXT_COLOR_RED;
+            // tty << "  ## Can't receive request";
+            // tty << TERMINAL_TEXT_COLOR_CYAN;
+            // tty << TERMINAL_TEXT_COLOR_RED;
+            // tty << " request by ";
+            // tty << TERMINAL_TEXT_COLOR_BLUE;
+            // tty << "INFO_SOCKET";
+            // tty << TERMINAL_TEXT_COLOR_RED;
+            // tty << " from user ";
+            // tty << TERMINAL_TEXT_COLOR_CYAN;
+            // tty << clientDeviceConnected.userDataBag.login;
+            // tty << TERMINAL_TEXT_COLOR_RED;
+            // tty << "!" << endl;
+            // tty << TERMINAL_TEXT_SETTING_RESET;
+            tty.print(string(" ") + "\a ## Can't receive request requested by $b INFO_SOCKET $r from user $c" + clientDeviceConnected.userDataBag.login + "$r !");
         }else{
-            tty << TERMINAL_TEXT_COLOR_WHITE;
-            tty << endl << "   <<< Request Received. Type ";
-            tty << TERMINAL_TEXT_COLOR_CYAN;
-            tty << clientRequestDatagram.requisition_type;
-            tty << TERMINAL_TEXT_SETTING_RESET;
-            tty << ": ";
-            if(clientRequestDatagram.requisition_type < 0 || clientRequestDatagram.requisition_type > MAX_CLIENT_REQUEST_CODE){
-                tty << TERMINAL_TEXT_COLOR_RED;
-                tty << "UKNOWN request type" << endl;
-                tty << TERMINAL_TEXT_SETTING_RESET;
-            }else{
-                tty << TERMINAL_TEXT_COLOR_CYAN;
-                tty << REQUESTS_NAMES[clientRequestDatagram.requisition_type] << endl;
-                tty << TERMINAL_TEXT_SETTING_RESET;
-
+            // tty << TERMINAL_TEXT_COLOR_WHITE;
+            // tty << endl << "   <<< Request Received. Type ";
+            // tty << TERMINAL_TEXT_COLOR_CYAN;
+            // tty << clientRequestDatagram.requisition_type;
+            // tty << TERMINAL_TEXT_SETTING_RESET;
+            // tty << ": ";
+            tty.print(string(" ") + "<<< Request Received - $c"
+                + to_string(clientRequestDatagram.requisition_type) + " $r : $c " 
+                + ClientsRequests::getRequestName(clientRequestDatagram.requisition_type));
+            
+            if(ClientsRequests::isRequestValid(clientRequestDatagram.requisition_type)){
                 // Decode requisition type
                 switch (clientRequestDatagram.requisition_type){
                 case CLIENT_REQUEST_QUIT:                    
-                    tty << TERMINAL_TEXT_COLOR_RED;
-                    tty << "  ## Can't receive request by";
-                    tty << TERMINAL_TEXT_COLOR_BLUE;
-                    tty << "INFO_SOCKET";
-                    tty << TERMINAL_TEXT_COLOR_RED;
-                    tty << " from user ";
-                    tty << TERMINAL_TEXT_COLOR_CYAN;
-                    tty << clientDeviceConnected.userDataBag.login;
-                    tty << TERMINAL_TEXT_COLOR_RED;
-                    tty << "!" << endl;
-                    tty << TERMINAL_TEXT_SETTING_RESET;
-                    
+                    // tty << TERMINAL_TEXT_COLOR_RED;
+                    // tty << "  ## Can't receive request by";
+                    // tty << TERMINAL_TEXT_COLOR_BLUE;
+                    // tty << "INFO_SOCKET";
+                    // tty << TERMINAL_TEXT_COLOR_RED;
+                    // tty << " from user ";
+                    // tty << TERMINAL_TEXT_COLOR_CYAN;
+                    // tty << clientDeviceConnected.userDataBag.login;
+                    // tty << TERMINAL_TEXT_COLOR_RED;
+                    // tty << "!" << endl;
+                    // tty << TERMINAL_TEXT_SETTING_RESET;
+                    tty.print(string("") + "## Can't receive request by $b INFO_SOCKET $r from user $c " + clientDeviceConnected.userDataBag.login + " $r !");
+
                     disconect_client_device(&clientDeviceConnected);
                     break;
                 case CLIENT_REQUEST_LOGIN:
                     // Login Validation
                     if (!clientDeviceConnected.login_validated){
-                        tty << "User Login Recieved: " << clientRequestDatagram.userDataBag.login << endl;
-                        tty << "User Password Recieved: " << clientRequestDatagram.userDataBag.passwd << endl;
+                        // tty << "User Login Recieved: " << clientRequestDatagram.userDataBag.login << endl;
+                        // tty << "User Password Recieved: " << clientRequestDatagram.userDataBag.passwd << endl;
+                        tty.print(string("") + "User Login Recieved: $c " + clientRequestDatagram.userDataBag.login);
+                        tty.print(string("") + "User Password Recieved: $c " + clientRequestDatagram.userDataBag.passwd);
 
                         if (checkLogin(clientRequestDatagram.userDataBag)){
-                            tty << "  ** Login validated successfully!" << endl;
+                            // tty << "  ** Login validated successfully!" << endl;
+                            tty.print("** Login validated successfully!");
+
                             clientDeviceConnected.login_validated = true;
                             clientDeviceConnected.userDataBag = clientRequestDatagram.userDataBag;
                             
@@ -236,19 +255,23 @@ void *runNewInfoDataCommunicationSocket(void *clientDeviceConected_arg){
                             int status = stat(clientDeviceConnected.db_folder_path.c_str(), &st);
                             
                             if(status != 0){
-                                tty << "  ** DB: User Data Folder Created: " << clientDeviceConnected.db_folder_path << endl;
+                                // tty << "  ** DB: User Data Folder Created: " << clientDeviceConnected.db_folder_path << endl;
+                                tty.print(string("") + "** DB: User Data Folder Created: $b " + clientDeviceConnected.db_folder_path);
                                 // mkdir(clientDeviceConnected.db_folder_path.c_str(), DB_USERS_DATA_FOLDER_PERMISSION, true);
                                 string cmd = "mkdir -p ";   // create also parents folders if necessary
                                 cmd += clientDeviceConnected.db_folder_path;                        
                                 system(cmd.c_str());
                             }else{
-                                tty << "  ** DB: Folder " << clientDeviceConnected.db_folder_path << " prepared ..." << endl;
+                                // tty << "  ** DB: Folder " << clientDeviceConnected.db_folder_path << " prepared ..." << endl;
+                                tty.print(string("") + "  ** DB: Folder $b " + clientDeviceConnected.db_folder_path + " $w prepared ...");
                             }
-                            tty << "  ** Client DB Folder prepared: " << clientDeviceConnected.userDataBag.login << endl;
-                            tty << "  \t> Path: ";
-                            tty << TERMINAL_TEXT_COLOR_CYAN;
-                            tty << clientDeviceConnected.db_folder_path << endl;
-                            tty << TERMINAL_TEXT_SETTING_RESET;
+                            // tty << "  ** Client DB Folder prepared: " << clientDeviceConnected.userDataBag.login << endl;
+                            // tty << "  \t> Path: ";
+                            // tty << TERMINAL_TEXT_COLOR_CYAN;
+                            // tty << clientDeviceConnected.db_folder_path << endl;
+                            // tty << TERMINAL_TEXT_SETTING_RESET;
+                            tty.print(string("") + "\t** Client DB Folder prepared: %b " + clientDeviceConnected.userDataBag.login );
+                            tty.print(string("") + "\t\t Path: $c " + clientDeviceConnected.db_folder_path);
 
                             pthread_create(&(clientDeviceConnected.file_monitoring_module_thread), NULL, server_folder_watcher_module, (void*)&clientDeviceConnected);
                             pthread_create(&clientDeviceConnected.sync_thread, NULL, runNewSyncDataCommunicationSocket, (void *)&clientDeviceConnected);
@@ -256,7 +279,8 @@ void *runNewInfoDataCommunicationSocket(void *clientDeviceConected_arg){
                         }
                         else
                         {
-                            tty << "\a  << Invalid Login or Password!" << endl;
+                            // tty << "\a  << Invalid Login or Password!" << endl;
+                            tty.print("Invalid Login or Password!", "red");
                         }
                     }
                     break;
@@ -269,15 +293,16 @@ void *runNewInfoDataCommunicationSocket(void *clientDeviceConected_arg){
                         clientDeviceConnected.is_service_active = true;
                         serverRequestResponseDatagram.service_activation_state = clientDeviceConnected.is_service_active;
                                                 
-                        tty << TERMINAL_TEXT_SETTING_RESET;
-                        tty << "  ** ";
-                        tty << TERMINAL_TEXT_COLOR_GREEN;
-                        tty << "Successfully ";
-                        tty << TERMINAL_TEXT_SETTING_RESET;
-                        tty << "started SYNC service to user ";
-                        tty << TERMINAL_TEXT_COLOR_CYAN;
-                        tty << clientDeviceConnected.userDataBag.login << endl;
-                        tty << TERMINAL_TEXT_SETTING_RESET;
+                        // tty << TERMINAL_TEXT_SETTING_RESET;
+                        // tty << "  ** ";
+                        // tty << TERMINAL_TEXT_COLOR_GREEN;
+                        // tty << "Successfully ";
+                        // tty << TERMINAL_TEXT_SETTING_RESET;
+                        // tty << "started SYNC service to user ";
+                        // tty << TERMINAL_TEXT_COLOR_CYAN;
+                        // tty << clientDeviceConnected.userDataBag.login << endl;
+                        // tty << TERMINAL_TEXT_SETTING_RESET;
+                        tty.print(string("") + " ** Service started $g Successfully $w to user $c " + clientDeviceConnected.userDataBag.login);
                     }
                     break;
                 case CLIENT_REQUEST_STATUS:
@@ -290,15 +315,16 @@ void *runNewInfoDataCommunicationSocket(void *clientDeviceConected_arg){
                         clientDeviceConnected.is_service_active = false;
                         serverRequestResponseDatagram.service_activation_state = clientDeviceConnected.is_service_active;
                                                 
-                        tty << TERMINAL_TEXT_SETTING_RESET;
-                        tty << "  ** ";
-                        tty << TERMINAL_TEXT_COLOR_GREEN;
-                        tty << "Successfully ";
-                        tty << TERMINAL_TEXT_SETTING_RESET;
-                        tty << "started SYNC service to user ";
-                        tty << TERMINAL_TEXT_COLOR_CYAN;
-                        tty << clientDeviceConnected.userDataBag.login << endl;
-                        tty << TERMINAL_TEXT_SETTING_RESET;
+                        // tty << TERMINAL_TEXT_SETTING_RESET;
+                        // tty << "  ** ";
+                        // tty << TERMINAL_TEXT_COLOR_GREEN;
+                        // tty << "Successfully ";
+                        // tty << TERMINAL_TEXT_SETTING_RESET;
+                        // tty << "started SYNC service to user ";
+                        // tty << TERMINAL_TEXT_COLOR_CYAN;
+                        // tty << clientDeviceConnected.userDataBag.login << endl;
+                        // tty << TERMINAL_TEXT_SETTING_RESET;
+                        tty.print(string("") + "** Service stoped $g Successfully $w for user $c " + clientDeviceConnected.userDataBag.login);
                     }
                     break;
 
@@ -307,15 +333,16 @@ void *runNewInfoDataCommunicationSocket(void *clientDeviceConected_arg){
                 // Answer Client Request
                 nmr_bytes = write(clientDeviceConnected.info_socket_fd, (void *)&serverRequestResponseDatagram, REQUEST_RESPONSE_DATAGRAM_SIZE);  
                 if( nmr_bytes == -1 ){
-                    tty << TERMINAL_TEXT_COLOR_RED;
-                    tty << "  ## Can't answer client request by";
-                    tty << TERMINAL_TEXT_COLOR_BLUE;
-                    tty << " SYNC_SOCKET";
-                    tty << TERMINAL_TEXT_COLOR_RED;
-                    tty << " to user ";
-                    tty << TERMINAL_TEXT_COLOR_CYAN;
-                    tty << clientDeviceConnected.userDataBag.login << endl;
-                    tty << TERMINAL_TEXT_SETTING_RESET;
+                    // tty << TERMINAL_TEXT_COLOR_RED;
+                    // tty << "  ## Can't answer client request by";
+                    // tty << TERMINAL_TEXT_COLOR_BLUE;
+                    // tty << " SYNC_SOCKET";
+                    // tty << TERMINAL_TEXT_COLOR_RED;
+                    // tty << " to user ";
+                    // tty << TERMINAL_TEXT_COLOR_CYAN;
+                    // tty << clientDeviceConnected.userDataBag.login << endl;
+                    // tty << TERMINAL_TEXT_SETTING_RESET;
+                    tty.print(string("") + "## Can't answer client request by $b SYNC_SOCKET $r to user $c " + clientDeviceConnected.userDataBag.login);
                 }  
             }
         }
