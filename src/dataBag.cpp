@@ -219,7 +219,8 @@ void *userTerminalThread( void *clientStateInformation_arg ){
 
 
 void *syncronizationModuleThread( void *clientStateInformation_arg ){
-  ofstream tty(TERMINAL_CLIENT_SYNC_MODULE, ofstream::out | ofstream::app);
+  // ofstream tty(TERMINAL_CLIENT_SYNC_MODULE, ofstream::out | ofstream::app);
+  OutputTerminal outputTerminal(TERMINAL_CLIENT_SYNC_MODULE);
   ClientStateInformation *clientStateInformation = (ClientStateInformation*)clientStateInformation_arg;
   FileMetadata fileMetadata;
   char *buffer;
@@ -232,9 +233,10 @@ void *syncronizationModuleThread( void *clientStateInformation_arg ){
 
   pthread_create(&(clientStateInformation->folder_watcher_thread), NULL, client_folder_watcher_module, (void*)clientStateInformation );
   
-  tty << TERMINAL_TEXT_COLOR_WHITE;
-  tty << endl << "  ** Synchronization module prepared ..." << endl;
-  tty << TERMINAL_TEXT_SETTING_RESET;
+  // tty << TERMINAL_TEXT_COLOR_WHITE;
+  // tty << endl << "  ** Synchronization module prepared ..." << endl;
+  // tty << TERMINAL_TEXT_SETTING_RESET;
+  outputTerminal.print("  ** Synchronization module prepared ...");
 
   while(clientStateInformation->is_connected){
     
@@ -245,43 +247,49 @@ void *syncronizationModuleThread( void *clientStateInformation_arg ){
       if( nmr_bytes != -1 ){
         if(!fileMetadata.up_to_date_with_server){
           if(fileMetadata.should_delete_file){
-            tty << TERMINAL_TEXT_COLOR_YELLOW;
-            tty << "   <<< Deletation order: " << fileMetadata.name << endl;
-            tty << TERMINAL_TEXT_SETTING_RESET;
+            // tty << TERMINAL_TEXT_COLOR_YELLOW;
+            // tty << "   <<< Deletation order: " << fileMetadata.name << endl;
+            // tty << TERMINAL_TEXT_SETTING_RESET;
+            outputTerminal.print(string() + "<<< Deletation order: " + fileMetadata.name, "yellow");
 
             // Delete file
             if( access((clientStateInformation->root_folder_path + fileMetadata.name).c_str(), F_OK ) != 0 ){
-              tty << TERMINAL_TEXT_COLOR_RED;
-              tty << "   ### Can't acess to delete file: ";
-              tty << TERMINAL_TEXT_SETTING_RESET;
-              tty << (clientStateInformation->root_folder_path + fileMetadata.name).c_str();
-              tty << TERMINAL_TEXT_COLOR_RED;
-              tty << "!" << endl;
-              tty << TERMINAL_TEXT_SETTING_RESET;
+              // tty << TERMINAL_TEXT_COLOR_RED;
+              // tty << "   ### Can't acess to delete file: ";
+              // tty << TERMINAL_TEXT_SETTING_RESET;
+              // tty << (clientStateInformation->root_folder_path + fileMetadata.name).c_str();
+              // tty << TERMINAL_TEXT_COLOR_RED;
+              // tty << "!" << endl;
+              // tty << TERMINAL_TEXT_SETTING_RESET;
+              outputTerminal.print(string("") + "### \a Can't acess to delete file: $0 " + clientStateInformation->root_folder_path + fileMetadata.name + " $r !");
             }else{
               if( remove( (clientStateInformation->root_folder_path + fileMetadata.name).c_str() ) != 0 ){
-                tty << TERMINAL_TEXT_COLOR_RED;
-                tty << "   ### Can't delete file: ";
-                tty << TERMINAL_TEXT_SETTING_RESET;
-                tty << (clientStateInformation->root_folder_path + fileMetadata.name).c_str();
-                tty << TERMINAL_TEXT_COLOR_RED;
-                tty << "!" << endl;
-                tty << TERMINAL_TEXT_SETTING_RESET;
+                // tty << TERMINAL_TEXT_COLOR_RED;
+                // tty << "   ### Can't delete file: ";
+                // tty << TERMINAL_TEXT_SETTING_RESET;
+                // tty << (clientStateInformation->root_folder_path + fileMetadata.name).c_str();
+                // tty << TERMINAL_TEXT_COLOR_RED;
+                // tty << "!" << endl;
+                // tty << TERMINAL_TEXT_SETTING_RESET;
+                outputTerminal.print(string("") + "### \a Can't delete file: $0 " + clientStateInformation->root_folder_path + fileMetadata.name + " $r !");
               }
             }
           }else{
-            tty << TERMINAL_TEXT_COLOR_WHITE;
-            tty << "   <<< Metadata received: " << fileMetadata.name << endl;
-            tty << TERMINAL_TEXT_SETTING_RESET;
-           
+            // tty << TERMINAL_TEXT_COLOR_WHITE;
+            // tty << "   <<< Metadata received: " << fileMetadata.name << endl;
+            // tty << TERMINAL_TEXT_SETTING_RESET;
+           outputTerminal.print(string("") + "   <<< Metadata received: " + fileMetadata.name);
+
             // Read remote file
             buffer = new char[fileMetadata.size];
             nmr_bytes = socket_read(clientStateInformation->sync_data_communication_socket, buffer, fileMetadata.size);
 
             if( nmr_bytes != -1){
-              tty << TERMINAL_TEXT_COLOR_GREEN;
-              tty << "   <<< " << fileMetadata.name << " received: " << nmr_bytes << " Bytes" << endl;
-              tty << TERMINAL_TEXT_SETTING_RESET;
+              // tty << TERMINAL_TEXT_COLOR_GREEN;
+              // tty << "   <<< " << fileMetadata.name << " received: " << nmr_bytes << " Bytes" << endl;
+              // tty << TERMINAL_TEXT_SETTING_RESET;
+              outputTerminal.print(string("") + "<<< $b " + fileMetadata.name + " $g received: " + to_string(nmr_bytes) + " Bytes");
+
 
               // Write in local file
               string file_path = clientStateInformation->root_folder_path + fileMetadata.name;
@@ -291,29 +299,31 @@ void *syncronizationModuleThread( void *clientStateInformation_arg ){
                 writing_file.write(buffer, fileMetadata.size);
                 writing_file.close();
               }else{
-                tty << TERMINAL_TEXT_COLOR_RED;
-                tty << "  ## Can't open file ";
-                tty << TERMINAL_TEXT_COLOR_CYAN;
-                tty << file_path;
-                tty << TERMINAL_TEXT_COLOR_RED;
-                tty << " of writing " << endl;
-                tty << TERMINAL_TEXT_SETTING_RESET;
+                // tty << TERMINAL_TEXT_COLOR_RED;
+                // tty << "  ## Can't open file ";
+                // tty << TERMINAL_TEXT_COLOR_CYAN;
+                // tty << file_path;
+                // tty << TERMINAL_TEXT_COLOR_RED;
+                // tty << " of writing " << endl;
+                // tty << TERMINAL_TEXT_SETTING_RESET;
+                outputTerminal.print(string("") + "## \a Can't open file $w " + file_path + " $r for writing!");
               }
 
             }else{
-              tty << TERMINAL_TEXT_COLOR_RED;
-              tty << "  ## Can't receive ";
-              tty << TERMINAL_TEXT_COLOR_CYAN;
-              tty << fileMetadata.name;
-              tty << TERMINAL_TEXT_COLOR_RED;
-              tty << " data by ";
-              tty << TERMINAL_TEXT_COLOR_BLUE;
-              tty << "SYNC_SOCKET";
-              tty << TERMINAL_TEXT_COLOR_RED;
-              tty << " from ";
-              tty << TERMINAL_TEXT_COLOR_CYAN;
-              tty << "server" << endl;
-              tty << TERMINAL_TEXT_SETTING_RESET;
+              // tty << TERMINAL_TEXT_COLOR_RED;
+              // tty << "  ## Can't receive ";
+              // tty << TERMINAL_TEXT_COLOR_CYAN;
+              // tty << fileMetadata.name;
+              // tty << TERMINAL_TEXT_COLOR_RED;
+              // tty << " data by ";
+              // tty << TERMINAL_TEXT_COLOR_BLUE;
+              // tty << "SYNC_SOCKET";
+              // tty << TERMINAL_TEXT_COLOR_RED;
+              // tty << " from ";
+              // tty << TERMINAL_TEXT_COLOR_CYAN;
+              // tty << "server" << endl;
+              // tty << TERMINAL_TEXT_SETTING_RESET;
+              outputTerminal.print(string("") + "## \a Can't receive $b " + fileMetadata.name + " $r by $b SYNC_SOCKET $r from $c server!"); 
             }
             
             delete[] buffer;
@@ -327,15 +337,17 @@ void *syncronizationModuleThread( void *clientStateInformation_arg ){
             // Send metadata to server
             nmr_bytes = write(clientStateInformation->sync_data_communication_socket, (void*)&fileMetadata, sizeof(FileMetadata));
             if( nmr_bytes == -1){
-              tty << TERMINAL_TEXT_COLOR_RED;
-              tty << "  ## Can't send metadata by ";
-              tty << TERMINAL_TEXT_COLOR_BLUE;
-              tty << "SYNC_SOCKET";
-              tty << TERMINAL_TEXT_COLOR_RED;
-              tty << " to ";
-              tty << TERMINAL_TEXT_COLOR_CYAN;
-              tty << "server" << endl;
-              tty << TERMINAL_TEXT_SETTING_RESET;
+              // tty << TERMINAL_TEXT_COLOR_RED;
+              // tty << "  ## Can't send metadata by ";
+              // tty << TERMINAL_TEXT_COLOR_BLUE;
+              // tty << "SYNC_SOCKET";
+              // tty << TERMINAL_TEXT_COLOR_RED;
+              // tty << " to ";
+              // tty << TERMINAL_TEXT_COLOR_CYAN;
+              // tty << "server" << endl;
+              // tty << TERMINAL_TEXT_SETTING_RESET;
+              outputTerminal.print(string("") + "## \a Can't send metadata by $b SYNC_SOCKET $r to $c server!"); 
+
             }else{
               if(!fileMetadata.should_delete_file){
                 // tty << TERMINAL_TEXT_COLOR_WHITE;
@@ -344,19 +356,22 @@ void *syncronizationModuleThread( void *clientStateInformation_arg ){
                 // tty << TERMINAL_TEXT_COLOR_CYAN;
                 // tty << "server" << endl;
                 // tty << TERMINAL_TEXT_SETTING_RESET;
-                terminalPrint(tty, string("   >>> Metadata sended: $o to $t"), fileMetadata.name, string("server"), "");
+                // terminalPrint(tty, string("   >>> Metadata sended: $o to $t"), fileMetadata.name, string("server"), "");
+                outputTerminal.print(string("") + ">>> Metadata sended: $o to $t", fileMetadata.name, "server");
+
                 // Open file in sync_dir folder
                 string file_path = clientStateInformation->root_folder_path + fileMetadata.name;
                 std::ifstream reading_file(file_path);
                 
                 if(!reading_file.is_open()){
-                  tty << TERMINAL_TEXT_COLOR_RED;
-                  tty << "  ## Can't read file ";
-                  tty << TERMINAL_TEXT_COLOR_CYAN;
-                  tty << fileMetadata.name;
-                  tty << TERMINAL_TEXT_COLOR_RED;
-                  tty << " of sync_dir ";
-                  tty << TERMINAL_TEXT_SETTING_RESET;
+                  // tty << TERMINAL_TEXT_COLOR_RED;
+                  // tty << "  ## Can't read file ";
+                  // tty << TERMINAL_TEXT_COLOR_CYAN;
+                  // tty << fileMetadata.name;
+                  // tty << TERMINAL_TEXT_COLOR_RED;
+                  // tty << " of sync_dir ";
+                  // tty << TERMINAL_TEXT_SETTING_RESET;
+                  outputTerminal.print(string("")  + "## \a Can't read file $b " + fileMetadata.name + " $r  of $b sync_dir $r !");
                 }else{
                   // Read file in sync_dir folder
                   buffer = new char[fileMetadata.size];
@@ -365,36 +380,39 @@ void *syncronizationModuleThread( void *clientStateInformation_arg ){
                   // Send file to server
                   nmr_bytes = write(clientStateInformation->sync_data_communication_socket, (void*)buffer, fileMetadata.size);
                   if( nmr_bytes != -1 ){
-                      tty << TERMINAL_TEXT_COLOR_GREEN;
-                      tty << "   >>> " << fileMetadata.name << "(" <<  fileMetadata.size << " Bytes) "<< " sended to ";
-                      tty << TERMINAL_TEXT_COLOR_CYAN;
-                      tty << "server" << endl;
-                      tty << TERMINAL_TEXT_SETTING_RESET;
+                      // tty << TERMINAL_TEXT_COLOR_GREEN;
+                      // tty << "   >>> " << fileMetadata.name << "(" <<  fileMetadata.size << " Bytes) "<< " sended to ";
+                      // tty << TERMINAL_TEXT_COLOR_CYAN;
+                      // tty << "server" << endl;
+                      // tty << TERMINAL_TEXT_SETTING_RESET;
+                      outputTerminal.print(string("") + "   >>> $b " +  fileMetadata.name + "(" + to_string(fileMetadata.size) + " Bytes) sended to $c server");                  
                   }else{
-                      tty << TERMINAL_TEXT_COLOR_RED;
-                      tty << "  ## Can't send ";
-                      tty << TERMINAL_TEXT_COLOR_CYAN;
-                      tty << fileMetadata.name;
-                      tty << TERMINAL_TEXT_COLOR_RED;
-                      tty << " data by ";
-                      tty << TERMINAL_TEXT_COLOR_BLUE;
-                      tty << "SYNC_SOCKET";
-                      tty << TERMINAL_TEXT_COLOR_RED;
-                      tty << " to ";
-                      tty << TERMINAL_TEXT_COLOR_CYAN;
-                      tty << "server" << endl;
-                      tty << TERMINAL_TEXT_SETTING_RESET;
+                      // tty << TERMINAL_TEXT_COLOR_RED;
+                      // tty << "  ## Can't send ";
+                      // tty << TERMINAL_TEXT_COLOR_CYAN;
+                      // tty << fileMetadata.name;
+                      // tty << TERMINAL_TEXT_COLOR_RED;
+                      // tty << " data by ";
+                      // tty << TERMINAL_TEXT_COLOR_BLUE;
+                      // tty << "SYNC_SOCKET";
+                      // tty << TERMINAL_TEXT_COLOR_RED;
+                      // tty << " to ";
+                      // tty << TERMINAL_TEXT_COLOR_CYAN;
+                      // tty << "server" << endl;
+                      // tty << TERMINAL_TEXT_SETTING_RESET;
+                      outputTerminal.print(string("") + "  ## Can't send $b " + fileMetadata.name + " $r by $b SYNC_SOCKET $r to $c server $r !");
                   }
                     
                   delete[] buffer;
                 }
               }else{
-                tty << TERMINAL_TEXT_COLOR_YELLOW;
-                tty << "   >>> Deletation order: " << fileMetadata.name;
-                tty << " sended to ";
-                tty << TERMINAL_TEXT_COLOR_CYAN;
-                tty << "server" << endl;
-                tty << TERMINAL_TEXT_SETTING_RESET;
+                // tty << TERMINAL_TEXT_COLOR_YELLOW;
+                // tty << "   >>> Deletation order: " << fileMetadata.name;
+                // tty << " sended to ";
+                // tty << TERMINAL_TEXT_COLOR_CYAN;
+                // tty << "server" << endl;
+                // tty << TERMINAL_TEXT_SETTING_RESET;
+                outputTerminal.print(string("") + ">>> Deletation order: $b fileMetadata.name $y sended to $c server");
 
               }
             }
@@ -405,28 +423,30 @@ void *syncronizationModuleThread( void *clientStateInformation_arg ){
             // Send metadata to server
             nmr_bytes = write(clientStateInformation->sync_data_communication_socket, (void*)&fileMetadata, sizeof(FileMetadata));
             if( nmr_bytes == -1){
-                tty << TERMINAL_TEXT_COLOR_RED;
-                tty << "  ## Can't send UP TO DATE notification by ";
-                tty << TERMINAL_TEXT_COLOR_BLUE;
-                tty << "SYNC_SOCKET";
-                tty << TERMINAL_TEXT_COLOR_RED;
-                tty << " to ";
-                tty << TERMINAL_TEXT_COLOR_CYAN;
-                tty << "server" << endl;
-                tty << TERMINAL_TEXT_SETTING_RESET;
+                // tty << TERMINAL_TEXT_COLOR_RED;
+                // tty << "  ## Can't send UP TO DATE notification by ";
+                // tty << TERMINAL_TEXT_COLOR_BLUE;
+                // tty << "SYNC_SOCKET";
+                // tty << TERMINAL_TEXT_COLOR_RED;
+                // tty << " to ";
+                // tty << TERMINAL_TEXT_COLOR_CYAN;
+                // tty << "server" << endl;
+                // tty << TERMINAL_TEXT_SETTING_RESET;
+                outputTerminal.print(string("") + "## Can't send UP TO DATE notification by $b SYNC_SOCKET $r to $c server $r !");
             }
           }
         }
       }else{
-        tty << TERMINAL_TEXT_COLOR_RED;
-        tty << "  ## Can't receive metadata by ";
-        tty << TERMINAL_TEXT_COLOR_BLUE;
-        tty << "SYNC_SOCKET";
-        tty << TERMINAL_TEXT_COLOR_RED;
-        tty << " from ";
-        tty << TERMINAL_TEXT_COLOR_CYAN;
-        tty << "server" << endl;
-        tty << TERMINAL_TEXT_SETTING_RESET;
+        // tty << TERMINAL_TEXT_COLOR_RED;
+        // tty << "  ## Can't receive metadata by ";
+        // tty << TERMINAL_TEXT_COLOR_BLUE;
+        // tty << "SYNC_SOCKET";
+        // tty << TERMINAL_TEXT_COLOR_RED;
+        // tty << " from ";
+        // tty << TERMINAL_TEXT_COLOR_CYAN;
+        // tty << "server" << endl;
+        // tty << TERMINAL_TEXT_SETTING_RESET;
+        outputTerminal.print(string("") + "  ## Can't receive metadata by $b SYNC_SOCKET $r from $c server $r !");
       }
     }
   }

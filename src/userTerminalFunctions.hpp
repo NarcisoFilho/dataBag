@@ -43,14 +43,14 @@ void userTerminal_login(ClientStateInformation *clientStateInformation){
     // Request
     bytes_number = write(clientStateInformation->info_communication_socket, &clientRequest, REQUEST_DATAGRAM_SIZE);
     if(bytes_number == -1){
-        cout << "\a    ## Couldn't contact server ..." << endl;
+        cout << "## \a Couldn't contact server ..." << endl;
         return;
     }
 
     // Response
     bytes_number = read(clientStateInformation->info_communication_socket, &serverResponse, REQUEST_RESPONSE_DATAGRAM_SIZE );
     if(bytes_number == -1){
-        cout << "\a    ## Couldn't receive answer from server ..." << endl;
+        cout << "## \a Couldn't receive answer from server ..." << endl;
         return;
     }
 

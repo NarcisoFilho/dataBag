@@ -22,16 +22,17 @@ using namespace std;
 class OutputTerminal{
     private:
     string terminalName;
-    ofstream tty;
+    // ofstream tty;
+    ostream& tty;
     string currentColor;
 
     public:
-    OutputTerminal(string);
+    OutputTerminal(string, ostream&);
     ~OutputTerminal();
     void print(string);
     void print(string, string);
     void printInline(string, string);
-    template<typename T1, typename T2, typename T3, typename T4> void print(T1, T2, T3, T4 source_arg = "");
+    template<typename T1, typename T2, typename T3, typename T4 = string> void print(T1, T2, T3, T4  = "");
 
     private:
     list<string> tokenizer(string);
@@ -41,10 +42,10 @@ class OutputTerminal{
     void clearTerminal(string);
 };
 
-OutputTerminal::OutputTerminal(string terminalName){
+OutputTerminal::OutputTerminal(string terminalName, ostream& tty){
     this->terminalName = terminalName;
     // this->tty.open(this->terminalName, ofstream::out | ofstream::app);
-    #define tty cout;
+    this->tty = tty;
 }
 
 OutputTerminal::~OutputTerminal(){
@@ -63,12 +64,14 @@ void OutputTerminal::print(string msg){
         }
     }
 
-    tty << SETTING_RESET << endl;
+    this->currentColor = SETTING_RESET;
+    tty << this->currentColor << endl;    
 }
 
 void OutputTerminal::print(string msg, string color){
     this->printInline(msg, color);
-    tty << SETTING_RESET << endl;
+    this->currentColor = SETTING_RESET;
+    tty << this->currentColor << endl;
 }
 
 void OutputTerminal::printInline(string msg, string color){

@@ -37,7 +37,7 @@ int main(){
     // Create Sentinel Socket
     int servers_sentinel_socket = socket(AF_INET, SOCK_STREAM, 0);
     if(servers_sentinel_socket == -1)
-        pError("\a### Error on sentinel socket creation!");
+        pError("### \a Error on sentinel socket creation!");
     else
         cout << "  ** Server Sentinel Socket created successfully ..." << endl;
 
@@ -54,7 +54,7 @@ int main(){
     bzero(&(sentinel_server_socket_addr.sin_zero), 8);
 
     if( bind(servers_sentinel_socket, (const sockaddr *)&sentinel_server_socket_addr, sizeof(sentinel_server_socket_addr)) < 0 )
-        pError("\a### Error on sentinel socket binding!");
+        pError("### \a Error on sentinel socket binding!");
     else
         cout << "  ** Server Sentinel Socket binded to port ..."<< SENTINEL_SOCKET_PORT << " successfully" << endl;
     

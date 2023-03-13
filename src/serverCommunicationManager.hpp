@@ -49,7 +49,7 @@ void *serverSentinelModule(void *servers_sentinel_socket_arg){
             // tty << TERMINAL_TEXT_COLOR_RED;
             // tty << "\a### Failure in listen for connection!" << endl;
             // tty << TERMINAL_TEXT_SETTING_RESET;
-            tty.print("\a### Failure in listen for connection!", "red");
+            tty.print("### \a Failure in listen for connection!", "red");
 
         }else{
             // tty << TERMINAL_TEXT_COLOR_WHITE;
@@ -65,7 +65,7 @@ void *serverSentinelModule(void *servers_sentinel_socket_arg){
             // tty << TERMINAL_TEXT_COLOR_RED;
             // tty << "\a### Failure in accept connection!" << endl;
             // tty << TERMINAL_TEXT_SETTING_RESET;
-            tty.print("\a### Failure in accept connection!");
+            tty.print("### \a Failure in accept connection!");
         }else{
             // tty << TERMINAL_TEXT_COLOR_GREEN;
             // tty << "\t  ** Connection established: " << endl;
@@ -107,7 +107,7 @@ void *runNewInfoDataCommunicationSocket(void *clientDeviceConected_arg){
         // tty << TERMINAL_TEXT_COLOR_RED;
         // tty << "\a  ##Error on SYNC data communication socket creation!" << endl;
         // tty << TERMINAL_TEXT_SETTING_RESET;
-        tty.print("\a  ##Error on SYNC data communication socket creation!");
+        tty.print("## \aError on SYNC data communication socket creation!");
         disconect_client_device(&clientDeviceConnected);
         return NULL;
     }else{
@@ -143,7 +143,7 @@ void *runNewInfoDataCommunicationSocket(void *clientDeviceConected_arg){
         // tty << TERMINAL_TEXT_COLOR_CYAN;
         // tty << clientDeviceConnected.client_device_address_sync.sin_port << endl;
         // tty << TERMINAL_TEXT_SETTING_RESET;
-        tty.print("\a  ## Error to connect sync socket:");
+        tty.print("## \a Error to connect sync socket:");
         tty.print(string("\t# Client Address: $c ") + to_string(clientDeviceConnected.client_device_address_sync.sin_addr.s_addr));
         tty.print(string("\t# Client Port: $c ") + to_string(clientDeviceConnected.client_device_address_sync.sin_port));
         disconect_client_device(&clientDeviceConnected);
@@ -185,7 +185,7 @@ void *runNewInfoDataCommunicationSocket(void *clientDeviceConected_arg){
             // tty << TERMINAL_TEXT_SETTING_RESET;
             // tty << ": ";
             tty.print(string(" ") + "<<< Request Received - $c"
-                + to_string(clientRequestDatagram.requisition_type) + " $r : $c " 
+                + to_string(clientRequestDatagram.requisition_type) + " $0 : $c " 
                 + ClientsRequests::getRequestName(clientRequestDatagram.requisition_type));
             
             if(ClientsRequests::isRequestValid(clientRequestDatagram.requisition_type)){
@@ -280,7 +280,7 @@ void *runNewInfoDataCommunicationSocket(void *clientDeviceConected_arg){
                         else
                         {
                             // tty << "\a  << Invalid Login or Password!" << endl;
-                            tty.print("Invalid Login or Password!", "red");
+                            tty.print("# \a Invalid Login or Password!", "red");
                         }
                     }
                     break;
