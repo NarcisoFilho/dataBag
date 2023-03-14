@@ -30,4 +30,4 @@ typedef struct ClientDeviceConnected{
     queue<FileMetadata> modified_files_queue;
 }ClientDeviceConnected;
 
-#endif
+#endif // __CLIENT_DEVICE_CONECTED_HPP

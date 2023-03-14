@@ -40,8 +40,8 @@ void *serverSentinelModule(void *servers_sentinel_socket_arg){
     struct sockaddr_in info_data_communication_socket_addr;
     socklen_t info_data_communication_socket_addr_length = sizeof(struct sockaddr_in);
     int info_data_communication_socket;
-    // ofstream tty(TERMINAL_SERVER_SENTINEL, ofstream::out | ofstream::app);
-    OutputTerminal tty(TERMINAL_SERVER_SENTINEL);
+    // ofstream tty(SERVER_SENTINEL_TERMINAL, ofstream::out | ofstream::app);
+    OutputTerminal tty(SERVER_SENTINEL_TERMINAL);
 
     while(true) {
         // Listen
@@ -98,8 +98,8 @@ void *runNewInfoDataCommunicationSocket(void *clientDeviceConected_arg){
     ClientDeviceConnected clientDeviceConnected = *((ClientDeviceConnected *)clientDeviceConected_arg);
     clientDeviceConnected.login_validated = false;
     clientDeviceConnected.is_connected = true;
-    // ofstream tty(TERMINAL_SERVER_INFO_SOCKET, ofstream::out | ofstream::app);
-    OutputTerminal tty(TERMINAL_SERVER_INFO_SOCKET);
+    // ofstream tty(SERVER_REQUESTS_MAILBOX_TERMINAL, ofstream::out | ofstream::app);
+    OutputTerminal tty(SERVER_REQUESTS_MAILBOX_TERMINAL);
 
     // SYNC Data Socket Creation
     clientDeviceConnected.sync_socket_fd = socket(AF_INET, SOCK_STREAM, 0);
@@ -257,7 +257,7 @@ void *runNewInfoDataCommunicationSocket(void *clientDeviceConected_arg){
                             if(status != 0){
                                 // tty << "  ** DB: User Data Folder Created: " << clientDeviceConnected.db_folder_path << endl;
                                 tty.print(string("") + "** DB: User Data Folder Created: $b " + clientDeviceConnected.db_folder_path);
-                                // mkdir(clientDeviceConnected.db_folder_path.c_str(), DB_USERS_DATA_FOLDER_PERMISSION, true);
+                                // mkdir(clientDeviceConnected.db_folder_path.c_str(), DEFAULT_FOLDER_PERMISSION, true);
                                 string cmd = "mkdir -p ";   // create also parents folders if necessary
                                 cmd += clientDeviceConnected.db_folder_path;                        
                                 system(cmd.c_str());
@@ -356,7 +356,7 @@ void *runNewSyncDataCommunicationSocket(void *clientDeviceConected_arg){
     FileMetadata fileMetadata;
     char *buffer;
     int nmr_bytes;
-    ofstream tty(TERMINAL_SERVER_SYNC_MODULE, ofstream::out | ofstream::app);
+    ofstream tty(SERVER_DATA_HARBOR_TERMINAL, ofstream::out | ofstream::app);
 
     // Copying server folder to user folder
     struct dirent *folder_element_pointer;  // Pointer for directory entry 
@@ -646,7 +646,7 @@ void disconect_client_device(ClientDeviceConnected *clientDeviceConnected){
     clientDeviceConnected->is_connected = false;
 
     // Printing
-    ofstream tty(TERMINAL_SERVER_INFO_SOCKET, ofstream::out | ofstream::app);
+    ofstream tty(SERVER_REQUESTS_MAILBOX_TERMINAL, ofstream::out | ofstream::app);
     tty << TERMINAL_TEXT_SETTING_RESET;
     tty << "Device ";
     tty << TERMINAL_TEXT_COLOR_CYAN;

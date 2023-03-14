@@ -1,12 +1,16 @@
 #ifndef __GLOBAL_DEFINITIONS_HPP
 #define __GLOBAL_DEFINITIONS_HPP
 
+// REQUIRED FOLDERS
+#define APP_FOLDER "~/dataBag" 
+#define SYNCRONIZE_FOLDER "~/sync_dir" 
+#define TEMP_FOLDER APP_FOLDER"/temp" 
+#define DB_USERS_DATA_FOLDER APP_FOLDER"/DB/users_data/"
+
 // DataBag
 #define DATABAG_VERSION 0.1
 
 // OS ENVIROMENT 
-#define SYNCRONIZE_FOLDER "~/sync_dir" 
-#define TEMP_FOLDER "~/dataBag/temp" 
 
 // SOCKETS
 #define SENTINEL_SOCKET_PORT 7777
@@ -49,23 +53,13 @@
 #define TERMINAL_TEXT_SETTING_RESET "\033[1;0m"
 
 // TERMINAL FOR OUTPUTS
-#define TERMINAL_SERVER_SENTINEL "/dev/pts/2"
-#define TERMINAL_SERVER_INFO_SOCKET "/dev/pts/2"
-#define TERMINAL_SERVER_DB_WATCHER "/dev/pts/2"
-#define TERMINAL_SERVER_SYNC_MODULE "/dev/pts/2"
-#define DEF_TERMINAL_CLIENT_USER_TERMINAL "/dev/pts/3"
-#define DEF_TERMINAL_CLIENT_FOLDER_WATCHER "/dev/pts/3"
-#define DEF_TERMINAL_CLIENT_SYNC_MODULE "/dev/pts/3"
-// #define TERMINAL_SERVER_SENTINEL "/dev/pts/1"
-// #define TERMINAL_SERVER_INFO_SOCKET "/dev/pts/2"
-// #define TERMINAL_SERVER_DB_WATCHER "/dev/pts/3"
-// #define TERMINAL_SERVER_SYNC_MODULE "/dev/pts/4"
-// #define DEF_TERMINAL_CLIENT_USER_TERMINAL "/dev/pts/5"
-// #define DEF_TERMINAL_CLIENT_FOLDER_WATCHER "/dev/pts/6"
-// #define DEF_TERMINAL_CLIENT_SYNC_MODULE "/dev/pts/7"
-char TERMINAL_CLIENT_USER_TERMINAL[20];
-char TERMINAL_CLIENT_FOLDER_WATCHER[20];
-char TERMINAL_CLIENT_SYNC_MODULE[20];
+#define SERVER_SENTINEL_TERMINAL 	        	"serversentinelTerminal"
+#define SERVER_REQUESTS_MAILBOX_TERMINAL	    "serverrequestsReceiverTerminal"
+#define SERVER_DB_WATCHER_TERMINAL 		        "serverDBWatcherTerminal"
+#define SERVER_DATA_HARBOR_TERMINAL 		    "serverDataHarborTerminal"
+#define CLIENT_CONTROLER_TERMINAL 		        "clientControlerTerminal"
+#define CLIENT_SYNC_DIR_WATCHER_TERMINAL 		"clientFilesWatcherTerminal"
+#define CLIENT_DATA_HARBOR_TERMINAL 	        "clientDataHarborTerminal"
 
 // SYNC MODULE
 #define EVENTS_INOTIFY_BUFFER_LEN (1024 * 100)
@@ -73,8 +67,7 @@ char TERMINAL_CLIENT_SYNC_MODULE[20];
 #define MAX_SYNC_LIST_SIZE 2000
 
 //DB
-#define DB_USERS_DATA_FOLDER "~/dataBag/db/users_data/"
-#define DB_USERS_DATA_FOLDER_PERMISSION 0755 // THe own user, group and others
+#define DEFAULT_FOLDER_PERMISSION 0755 // The own user, group and others
 
 // Close Server
 #define FILE_OR_FOLDER_TO_CLOSE_SERVER "./closeServer"

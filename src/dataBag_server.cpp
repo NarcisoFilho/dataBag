@@ -1,6 +1,7 @@
 #include <iostream>
 #include <string>
 #include <cstring>
+#include <vector>
 
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -12,27 +13,23 @@
 #include "serverCommunicationManager.hpp"
 #include "global_definitions.hpp"
 #include "terminalHandle.hpp"
+#include "OutputTerminal.hpp"
+
+#include "configServer.hpp"
 
 using namespace std;
 
 int main(){
-    // Clear server terminals
-    clearTerminal(TERMINAL_SERVER_SENTINEL);
-    clearTerminal(TERMINAL_SERVER_INFO_SOCKET);
-    clearTerminal(TERMINAL_SERVER_SYNC_MODULE);
-    clearTerminal(TERMINAL_SERVER_DB_WATCHER);
+    // Open terminals
+    vector<OutputTerminal> terminals;    
+    terminals.emplace_back(OutputTerminal(SERVER_REQUESTS_MAILBOX_TERMINAL));
+    terminals.emplace_back(OutputTerminal(SERVER_DB_WATCHER_TERMINAL));
+    terminals.emplace_back(OutputTerminal(SERVER_DATA_HARBOR_TERMINAL));
 
-    // Create Essential Folders
-    struct stat st_temp_dir;
-    int status_temp_dir = stat(TEMP_FOLDER, &st_temp_dir);
-    if(status_temp_dir != 0){
-        string cmd = "mkdir -p ";
-        cmd += TEMP_FOLDER;                        
-        if( system(cmd.c_str()) == 0 )
-            cout << "  ** TEMP DIR Folder Created: " << TEMP_FOLDER << endl;
-        else
-            pError("  ## Can't creat TEMP Folder!");
-    }
+    // Config Server
+    configServer();  
+
+    
 
     // Create Sentinel Socket
     int servers_sentinel_socket = socket(AF_INET, SOCK_STREAM, 0);
@@ -44,7 +41,6 @@ int main(){
     // Settings
     int optval = 1;
     setsockopt(servers_sentinel_socket, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof(optval));
-
 
     // Bind Sentinel Socket
     struct sockaddr_in sentinel_server_socket_addr;
@@ -67,6 +63,9 @@ int main(){
         cout << "  ** 'New Device Sentinel' Service initialized successufully ..." << endl;
 
     // Close
+    for(auto terminal : terminals)
+        terminal.close();
+
     pthread_t closing_monitor_thread;
     volatile bool close_flag = false;
     pthread_create(&closing_monitor_thread, NULL, monitore_if_server_should_close, (void*)&close_flag);

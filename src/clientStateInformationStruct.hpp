@@ -6,8 +6,10 @@
 #include <fstream>
 #include <queue>
 #include <pthread.h>
+
 #include "userDataBag.hpp"
 #include "DatagramStructures.hpp"
+#include "OutputTerminal.hpp"
 
 typedef struct ClientStateInformation{
     int info_communication_socket;

@@ -1,21 +1,23 @@
+// Build-in Headers
 #include <iostream>
 #include <string>
 #include <cstring>
 #include <fstream> 
-
-
 #include <cstdio>
-#include <unistd.h>
+#include <cerrno>
+#include <vector>
+
 #include <fcntl.h>
+#include <unistd.h>
+#include <pthread.h>
 #include <sys/stat.h>
-#include <errno.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
-#include <pthread.h>
 #include <netdb.h> 
 #include <arpa/inet.h>
 
+// Proprietary Headers
 #include "errorHandling.hpp"
 #include "global_definitions.hpp"
 #include "userDataBag.hpp"
@@ -26,12 +28,13 @@
 #include "fileManager.hpp"
 #include "terminalHandle.hpp"
 #include "singleTranfer.hpp"
-
-using namespace std;
+#include "OutputTerminal.hpp"
 
 // Prototypes
 void *userTerminalThread(void*);
 void *syncronizationModuleThread(void*);
+
+using namespace std;
 
 int main(int argc, char **argv){
   if(argc > 3){
@@ -47,12 +50,15 @@ int main(int argc, char **argv){
       cout << TERMINAL_TEXT_COLOR_RED << "\a\t ## Command " << argv[2] << " not found!" << endl;
     }
   }
+  
+  // Open terminals
+  vector<OutputTerminal> terminals;
+  terminals.push_back(OutputTerminal(CLIENT_CONTROLER_TERMINAL));
+  terminals.push_back(OutputTerminal(CLIENT_SYNC_DIR_WATCHER_TERMINAL));
+  terminals.push_back(OutputTerminal(CLIENT_DATA_HARBOR_TERMINAL));
 
   ClientStateInformation clientStateInformation;
   clientStateInformation.running_in_server_host = (argc == 1);
-  strcpy(TERMINAL_CLIENT_USER_TERMINAL, ((clientStateInformation.running_in_server_host) ? DEF_TERMINAL_CLIENT_USER_TERMINAL : "/dev/pts/1"));
-  strcpy(TERMINAL_CLIENT_FOLDER_WATCHER, ((clientStateInformation.running_in_server_host) ? DEF_TERMINAL_CLIENT_FOLDER_WATCHER : "/dev/pts/2"));
-  strcpy(TERMINAL_CLIENT_SYNC_MODULE, ((clientStateInformation.running_in_server_host) ? DEF_TERMINAL_CLIENT_SYNC_MODULE : "/dev/pts/3"));
 
   // // Create Essential Folders
   if( mkdir(completePathByAliasPath("SYNCRONIZE_FOLDER").c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH) == 0 ){
@@ -60,10 +66,11 @@ int main(int argc, char **argv){
   }else if(!(errno == EEXIST)){
     pError("  ## Can't creat sync Folder!");
   }
+  
   // Clear server terminals
-  clearTerminal(TERMINAL_CLIENT_USER_TERMINAL);
-  clearTerminal(TERMINAL_CLIENT_FOLDER_WATCHER);
-  clearTerminal(TERMINAL_CLIENT_SYNC_MODULE);
+  clearTerminal(CLIENT_CONTROLER_TERMINAL);
+  clearTerminal(CLIENT_SYNC_DIR_WATCHER_TERMINAL);
+  clearTerminal(CLIENT_DATA_HARBOR_TERMINAL);
 
   // Print Welcome message
   cout << "======== DataBag: Take your data wherever you go ========" << endl;
@@ -160,6 +167,9 @@ int main(int argc, char **argv){
   pthread_create(&syncronization_module_thread, NULL, syncronizationModuleThread, (void*)&clientStateInformation);
 
   // Close
+  // for(auto terminal: terminals)
+  //   terminal.close();
+
   pthread_join(user_terminal_thread, NULL);
   close(info_communication_socket);
   close(sync_data_communication_socket);
@@ -219,8 +229,8 @@ void *userTerminalThread( void *clientStateInformation_arg ){
 
 
 void *syncronizationModuleThread( void *clientStateInformation_arg ){
-  // ofstream tty(TERMINAL_CLIENT_SYNC_MODULE, ofstream::out | ofstream::app);
-  OutputTerminal outputTerminal(TERMINAL_CLIENT_SYNC_MODULE);
+  // ofstream tty(CLIENT_DATA_HARBOR_TERMINAL, ofstream::out | ofstream::app);
+  OutputTerminal outputTerminal(CLIENT_DATA_HARBOR_TERMINAL);
   ClientStateInformation *clientStateInformation = (ClientStateInformation*)clientStateInformation_arg;
   FileMetadata fileMetadata;
   char *buffer;

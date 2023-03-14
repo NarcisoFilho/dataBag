@@ -54,7 +54,7 @@ void print_queue(std::queue<FileMetadata> q, ofstream &tty){
 
 void *server_folder_watcher_module(void *clientDeviceConnected_arg) {
     ClientDeviceConnected *clientDeviceConnected = (ClientDeviceConnected*) clientDeviceConnected_arg;
-    OutputTerminal tty(TERMINAL_SERVER_DB_WATCHER);
+    OutputTerminal tty(SERVER_DB_WATCHER_TERMINAL);
 
     // Initializing modified files queue
     tty.print("  ** Modified files queue initialized ...");
@@ -157,8 +157,8 @@ void *server_folder_watcher_module(void *clientDeviceConnected_arg) {
 void *client_folder_watcher_module(void *clientStateInformation_arg) {
     ClientStateInformation *clientStateInformation = (ClientStateInformation*) clientStateInformation_arg;
     string folderPath = SYNCRONIZE_FOLDER;
-    // ofstream tty(TERMINAL_CLIENT_FOLDER_WATCHER, ofstream::out | ofstream::app);
-    OutputTerminal tty(TERMINAL_CLIENT_FOLDER_WATCHER);
+    // ofstream tty(CLIENT_SYNC_DIR_WATCHER_TERMINAL, ofstream::out | ofstream::app);
+    OutputTerminal tty(CLIENT_SYNC_DIR_WATCHER_TERMINAL);
 
     // tty << TERMINAL_TEXT_COLOR_WHITE;
     // tty << "  ** Client Folder Watcher Module initialized ..." << endl;

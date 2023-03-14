@@ -4,7 +4,9 @@
 #include <iostream>
 #include <fstream>
 #include <list>
+#include <vector>
 #include <string>
+#include "global_definitions.hpp"
 
 using namespace std;
 
@@ -22,34 +24,63 @@ using namespace std;
 class OutputTerminal{
     private:
     string terminalName;
-    // ofstream tty;
-    ostream& tty;
+    string ptsCode;
+    ofstream tty;
     string currentColor;
 
     public:
-    OutputTerminal(string, ostream&);
+    OutputTerminal(string);
+    OutputTerminal(const OutputTerminal&);
     ~OutputTerminal();
     void print(string);
     void print(string, string);
     void printInline(string, string);
     template<typename T1, typename T2, typename T3, typename T4 = string> void print(T1, T2, T3, T4  = "");
+    void clear();
+    void close();
 
     private:
     list<string> tokenizer(string);
     string getProbablyMainColor(list<string>);
     string getTerminalColorByAlias(string);
     string getTerminalColorByCode(string);
-    void clearTerminal(string);
+    string openAndRegisterTerminal(string);
+    bool openTTYFile();
+    // string findOpendTerminal(string);
 };
 
-OutputTerminal::OutputTerminal(string terminalName, ostream& tty){
+OutputTerminal::OutputTerminal(string terminalName){
     this->terminalName = terminalName;
-    // this->tty.open(this->terminalName, ofstream::out | ofstream::app);
-    this->tty = tty;
+    this->ptsCode = this->openAndRegisterTerminal(this->terminalName);
+    this->openTTYFile();
+}
+
+OutputTerminal::OutputTerminal(const OutputTerminal& outputTerminalObject){
+    this->currentColor = outputTerminalObject.currentColor;
+    this->ptsCode = outputTerminalObject.ptsCode;
+    this->terminalName = outputTerminalObject.terminalName;
+    this->openTTYFile();
 }
 
 OutputTerminal::~OutputTerminal(){
-    // this->tty.close();
+    this->tty.close();
+}
+
+bool OutputTerminal::openTTYFile(){
+    this->tty.open(this->ptsCode, ofstream::out | ofstream::app);
+    return this->tty.is_open();
+}
+
+string OutputTerminal::openAndRegisterTerminal(string terminalName){
+    string ptsRegisterFileName = string(APP_FOLDER) + "/." + terminalName.substr(0,7);
+
+    system((string("") + "gnome-terminal -- $SHELL -c \" tty > "+ ptsRegisterFileName + "; exec $SHELL\"").c_str());
+    
+    ifstream ptsRegisterFile(ptsRegisterFileName);
+    char ptsCode[50];
+    ptsRegisterFile.getline(ptsCode,50);
+
+    return ptsCode;
 }
 
 void OutputTerminal::print(string msg){
@@ -189,9 +220,46 @@ string OutputTerminal::getTerminalColorByCode(string code){
     }
 }
 
-void OutputTerminal::clearTerminal(string terminal){
-    string cmd = " clear > " + terminal;
+void OutputTerminal::clear(){
+    string cmd = " clear > " + this->ptsCode;
     system(cmd.c_str()); 
 }
+
+void OutputTerminal::close(){
+    string cmd = " exit > " + this->ptsCode;
+    system(cmd.c_str()); 
+}
+
+// void OutputTerminal::close(){
+//     string cmd = " exit > " + this->ptsCode;
+//     system(cmd.c_str());
+
+    // vector<OutputTerminalId>::iterator it = OutputTerminal::openedTerminals.begin() + OutputTerminal::findTerminalOpendIndex(terminalName);
+    // OutputTerminal::openedTerminals.erase(it);
+// }
+
+// string OutputTerminal::findOpendTerminal(string terminalName){
+//     string ptsCode = "";
+    
+//     for(auto terminalId: OutputTerminal::openedTerminals){
+//         if(terminalId.terminalName == terminalName){
+//             ptsCode = terminalId.ptsCode;
+//             break;
+//         }
+//     }
+
+//     return ptsCode;
+// }
+
+// int OutputTerminal::findTerminalOpendIndex(string terminalName){
+//     int index = 0;
+//     for(auto terminalId: OutputTerminal::openedTerminals){
+//         if(terminalId.terminalName == terminalName){
+//             return index; 
+//         }
+//         index++;
+//     }
+//     return -1;
+// }
 
 #endif // __OUTPUT_TERMINAL__
