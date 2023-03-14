@@ -12,8 +12,7 @@ class RequiredFolder{
     RequiredFolder(string,string);
     ~RequiredFolder(){}
     string getPath(){return this->path;}
-    string getAlias(){return this->alias;}
-    
+    string getAlias(){return this->alias;}  
 };
 
 RequiredFolder::RequiredFolder(string path, string alias){
