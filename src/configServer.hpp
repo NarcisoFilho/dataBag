@@ -28,7 +28,7 @@ void configFolderStructure(){
     for(auto folder: requiredFolders){
         try{
             if(filesystem::create_directories(folder.getPath()))
-            cout << "  ** " << folder.getAlias() << " Folder Created: " << endl;
+                cout << "  ** " << folder.getAlias() << " Folder Created: " << endl;
         }catch(filesystem::filesystem_error &e){
             pError("  ## Can't create " +  folder.getAlias() + " Folder!");
         }
