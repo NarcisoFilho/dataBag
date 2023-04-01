@@ -26,6 +26,7 @@
 #include "fileManager.hpp"
 #include "terminalHandle.hpp"
 #include "singleTranfer.hpp"
+#include "frontEnd.hpp"
 
 using namespace std;
 
@@ -82,13 +83,19 @@ int main(int argc, char **argv){
 
   // Localize Server Host
   struct hostent *dataBag_server_host;
-  struct in_addr ip_address; 
-  if( argc == 1 )
-    dataBag_server_host = gethostbyname("localhost");
-  else{
-    ip_address.s_addr = inet_addr(argv[1]);
-    dataBag_server_host = gethostbyaddr(&ip_address, sizeof(ip_address), AF_INET);
+  struct in_addr ip_address;
+  
+  if(1){
+      attribCurrentRM(&ip_address,dataBag_server_host);
+  }else{
+    if( argc == 1 )
+      dataBag_server_host = gethostbyname("localhost");
+    else{
+      ip_address.s_addr = inet_addr(argv[1]);
+      dataBag_server_host = gethostbyaddr(&ip_address, sizeof(ip_address), AF_INET);
+    }
   }
+
 
   if(dataBag_server_host == NULL)
     pError("\a  ##Failure: Can't localize server address!");   
@@ -140,6 +147,7 @@ int main(int argc, char **argv){
 
   cout << "  ** Connection to server established successfully ..." << endl;
   cout << "  ** Thanks for use DataBag. Type 'login' if you have an account or 'register' to sign in" << endl;
+  close(temp_socket);
 
   // Aplication User Terminal
   pthread_t user_terminal_thread;
@@ -159,11 +167,15 @@ int main(int argc, char **argv){
   clientStateInformation.sync_data_communication_socket = sync_data_communication_socket;
   pthread_create(&syncronization_module_thread, NULL, syncronizationModuleThread, (void*)&clientStateInformation);
 
+  // API server
+  pthread_t fe_thread;
+  pthread_create(&fe_thread, NULL, serverAPIWatcher, (void*)&clientStateInformation);
+
+
   // Close
   pthread_join(user_terminal_thread, NULL);
   close(info_communication_socket);
   close(sync_data_communication_socket);
-  close(temp_socket);
   return 0;
 }
 
