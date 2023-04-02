@@ -29,7 +29,7 @@ struct in_addr ip_address_global;
 
 void getCurrentRM(struct in_addr* ip_address, struct hostent* dataBag_server_host){
     // string rm_ip = ??? pegar por multicast;
-    string rm_ip = getIPRm();
+    // string rm_ip = getIPRm();
 
     // ip_address->s_addr = inet_addr(rm_ip.c_str());
     // dataBag_server_host = gethostbyaddr(&ip_address, sizeof(ip_address), AF_INET);
@@ -93,6 +93,38 @@ void* serverAPIWatcher(void* clientStateInformation_arg){
             
         }
     }
+
+    return NULL;
+}
+
+int sockfd;
+const char* multicast_ip = "224.0.0.1";
+int port = 8888;
+
+void createSocket(){
+    sockfd = socket(AF_INET, SOCK_DGRAM, 0);
+
+    struct sockaddr_in localaddr;
+    localaddr.sin_family = AF_INET;
+    localaddr.sin_addr.s_addr = INADDR_ANY;
+    localaddr.sin_port = htons(port);
+
+    bind(sockfd, (struct sockaddr*)&localaddr, sizeof(localaddr));
+
+    struct ip_mreq group;
+    group.imr_multiaddr.s_addr = inet_addr(multicast_ip);
+    group.imr_interface.s_addr = INADDR_ANY;
+
+    setsockopt(sockfd, IPPROTO_IP, IP_ADD_MEMBERSHIP, (char*)&group, sizeof(group));
+    close(sockfd);
+
+    std::cout << "Waiting for multicast data..." << std::endl;
+    char buffer[1024] = { 0 };
+    int length = sizeof(localaddr);
+
+    recvfrom(sockfd, buffer, 1024, 0, (struct sockaddr*)&localaddr, (socklen_t*)&length);
+    std::cout << buffer << std::endl;
+
 }
 
 #endif

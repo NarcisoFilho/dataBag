@@ -86,7 +86,7 @@ int main(int argc, char **argv){
   struct in_addr ip_address;
   
   if(1){
-      attribCurrentRM(&ip_address,dataBag_server_host);
+      getCurrentRM(&ip_address,dataBag_server_host);
   }else{
     if( argc == 1 )
       dataBag_server_host = gethostbyname("localhost");
