@@ -2,7 +2,7 @@
 #define __FRONTEND_HPP
 
 #include <iostream>
-#include <strings.h>
+#include <cstring>
 #include <unistd.h>
 
 #include <netdb.h>
