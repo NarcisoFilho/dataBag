@@ -109,32 +109,45 @@ int createSYNCSocket(){
     if(sync_data_communication_socket == -1)
         pError("\a  ##Error on SYNC data communication socket creation(acceptance)!");
     else
-        cout << "  ** SYNC Data Socket created(accepted) successfully ..." << endl;
+        cout << "  ** SYNC Data Socket created(accepted) succesrequestRmIPsfully ..." << endl;
 
     close(temp_socket);
     return sync_data_communication_socket;
 }
 
 void requestRmIP(){
+    sendMulticastMessage("requestRmIP");
+    string response = receiveMulticastMessage();
 
+    while(response.substr(4)){
+        response = receiveMulticastMessage();
+    }
+
+    response = response.substr(4);
+    strcpy(rmIP, response.c_str());
 }
 
 const char* getRmIp(){
-    static char mainServerIP[50] = "";
+    // static char mainServerIP[50] = "";
     // strcpy(mainServerIP, "127.0.0.1");
     // strcpy(mainServerIP, "172.18.0.1");
-    strcpy(mainServerIP, "192.168.1.101");
+    // strcpy(mainServerIP, "192.168.1.101");
+    // strcpy(mainServerIP, "172.25.61.213");
+    
     return (const char*)mainServerIP;
 }
 
 void* frontendModule(void* arg){
+    ClientStateInformation *clientStateInformation = (ClientStateInformation*)arg;
+
+
     // listen multicast sock
 
 }
 
 
 int createMulticastSocket(){
-     // Create a socket
+    // Create a socket
     multicastSocket = socket(AF_INET, SOCK_DGRAM, 0);
 
     // Set up multicast address

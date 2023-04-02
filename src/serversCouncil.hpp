@@ -51,7 +51,7 @@ void* councilActionModule(void* arg){
         //else switch from manager order
         //
         // if smtg do smtg
-        // if update servers list do smtg2
+        // if update servers list do s
         // if receive file do smtg2
         // if delete file do smtg2
         // 
@@ -63,6 +63,7 @@ void connectManagerDirectSocket(string ip){
 }
 
 void introduceYourSelf(){
+    // 
 
     // Send to
 
