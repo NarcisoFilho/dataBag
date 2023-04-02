@@ -24,6 +24,10 @@ const char* getRmIp();
 
 
 char rmIP[50] = "";
+int multicastSocket;
+int socketManagerDirect;
+struct sockaddr_in mcast_addr;
+
 
 int createINFOSocket(bool isReconection){
     int info_communication_socket = socket(AF_INET, SOCK_STREAM, 0);
@@ -37,24 +41,36 @@ int createINFOSocket(bool isReconection){
         cout << "  ** INFO Data Socket created successfully ..." << endl;
 
     // Localize Server Host
-    struct hostent *dataBag_server_host;
-    struct in_addr ip_address; 
+    // struct hostent *dataBag_server_host;
+    // struct in_addr ip_address; 
     if(!isReconection)
         strcpy(rmIP, getRmIp());
     
-    ip_address.s_addr = inet_addr(rmIP);
-    dataBag_server_host = gethostbyaddr(&ip_address, sizeof(ip_address), AF_INET);
+    // ip_address.s_addr = inet_addr(rmIP);
+    // dataBag_server_host = gethostbyaddr(&ip_address, sizeof(ip_address), AF_INET);
 
-    if(dataBag_server_host == NULL)
-        pError("\a  ##Failure: Can't localize server address!");   
-    else
-        cout << "  ** Server address localized successfully!" << endl;
+    // Get IP address of computer
+    char ip_address[50];
+    strcpy(ip_address, rmIP);
+
+    // Set address and port
+    struct sockaddr_in server;
+    memset(&server, 0, sizeof(server));
+    server.sin_family = AF_INET;
+    server.sin_port = htons(80);  // Listen on port 80
+    inet_pton(AF_INET, ip_address, &server.sin_addr);
+
+    // if(dataBag_server_host == NULL)
+    //     pError("\a  ##Failure: Can't localize server address!");   
+    // else
+    //     cout << "  ** Server address localized successfully!" << endl;
 
     // Connect Info Data Communication Sockets
     struct sockaddr_in server_sentinel_socket_addr; 
     server_sentinel_socket_addr.sin_family = AF_INET;
     server_sentinel_socket_addr.sin_port = htons(SENTINEL_SOCKET_PORT);
-    server_sentinel_socket_addr.sin_addr = *((struct in_addr*)dataBag_server_host->h_addr_list[0]);
+    // server_sentinel_socket_addr.sin_addr = *((struct in_addr*)dataBag_server_host->h_addr_list[0]);
+    inet_pton(AF_INET, ip_address, &server_sentinel_socket_addr.sin_addr);
     bzero(&(server_sentinel_socket_addr.sin_zero), 8);
 
     if(connect(info_communication_socket, (struct sockaddr *)&server_sentinel_socket_addr, sizeof(server_sentinel_socket_addr) ) < 0 )
@@ -106,8 +122,47 @@ void requestRmIP(){
 const char* getRmIp(){
     static char mainServerIP[50] = "";
     // strcpy(mainServerIP, "127.0.0.1");
-    strcpy(mainServerIP, "172.18.0.1");
+    // strcpy(mainServerIP, "172.18.0.1");
+    strcpy(mainServerIP, "192.168.1.101");
     return (const char*)mainServerIP;
+}
+
+void* frontendModule(void* arg){
+    // listen multicast sock
+
+}
+
+
+int createMulticastSocket(){
+     // Create a socket
+    multicastSocket = socket(AF_INET, SOCK_DGRAM, 0);
+
+    // Set up multicast address
+    mcast_addr.sin_family = AF_INET;
+    mcast_addr.sin_addr.s_addr = inet_addr("225.0.0.37");
+    mcast_addr.sin_port = htons(12345);
+   
+    // Bind to the multicast address
+    bind(multicastSocket, (struct sockaddr*)&mcast_addr, sizeof mcast_addr);
+
+    // Set socket options
+    int optval = 1;
+    setsockopt(multicastSocket, SOL_SOCKET, SO_BROADCAST, &optval, sizeof optval);
+}
+
+void sendMulticastMessage(string message){
+    // Send the message
+    char buffer[1024];
+    strcpy(buffer, message.c_str());
+    sendto(multicastSocket, buffer, strlen(buffer), 0, (struct sockaddr*)&mcast_addr, sizeof mcast_addr);
+}
+
+void receiveMulticastMessage(char buffer[1024]){
+    // Receive the message
+    int count = recvfrom(multicastSocket, buffer, 1024, 0, NULL, NULL);
+    buffer[count] = '\0';
+
+    // cout << buffer << endl;
 }
 
 #endif // __FRONTEND_HPP

@@ -112,24 +112,11 @@ int createMulticastSocket(){
     setsockopt(multicastSocket, SOL_SOCKET, SO_BROADCAST, &optval, sizeof optval);
 }
 
-void sendMulticastData(){
-    // Send the data
-    const char* data = "Hello, world!";
-    sendto(multicastSocket, data, strlen(data), 0, (struct sockaddr*)&mcast_addr, sizeof mcast_addr);
-}
-
 void sendMulticastMessage(string message){
     // Send the message
     char buffer[1024];
     strcpy(buffer, message.c_str());
     sendto(multicastSocket, buffer, strlen(buffer), 0, (struct sockaddr*)&mcast_addr, sizeof mcast_addr);
-}
-
-void receiveMulticastData(){
-    // Receive data
-    char buf[1024];
-    int count = recvfrom(multicastSocket, buf, 1024, 0, NULL, NULL);
-    buf[count] = '\0';
 }
 
 void receiveMulticastMessage(char buffer[1024]){
