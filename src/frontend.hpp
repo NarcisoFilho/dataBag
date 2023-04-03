@@ -159,7 +159,7 @@ void* frontendModule(void* arg){
     //     //     clientStateInformation->sync_data_communication_socket = createSYNCSocket();            
     //     // }
         cout << " \n>>>>>> I will change the server" << endl;
-        std::this_thread::sleep_for(std::chrono::seconds(10));
+        std::this_thread::sleep_for(std::chrono::seconds(13));
 
         strcpy(rmIP, "192.168.1.101");
         clientStateInformation->info_communication_socket = createINFOSocket();

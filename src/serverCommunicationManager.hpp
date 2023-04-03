@@ -721,7 +721,7 @@ void* reconectSyncThreadModule(void* clientDeviceConnected_arg){
 
     
     // }
-    std::this_thread::sleep_for(std::chrono::seconds(14));
+    std::this_thread::sleep_for(std::chrono::seconds(20));
 
     conectSyncSocket(clientDeviceConnected);
 
