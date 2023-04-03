@@ -329,6 +329,7 @@ void *runNewInfoDataCommunicationSocket(void *clientDeviceConected_arg){
 }
 
 void conectSyncSocket(ClientDeviceConnected* clientDeviceConnected){
+    clientDeviceConnected->sync_socket_fd = socket(AF_INET, SOCK_STREAM, 0);
     int optval = 1;
     setsockopt(clientDeviceConnected->sync_socket_fd, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof(optval));
 

@@ -130,12 +130,13 @@ int createSYNCSocket(){
 
 const char* getRmIp(){
     static char mainServerIP[50] = "";
-    strcpy(mainServerIP, "127.0.0.1");
+    // strcpy(mainServerIP, "127.0.0.1");
     // strcpy(mainServerIP, "172.18.0.1");
     // strcpy(mainServerIP, "192.168.1.101");
     // strcpy(mainServerIP, "172.25.61.213");
     // strcpy(mainServerIP, "127.0.1.1");
     // strcpy(mainServerIP, "127.0.1.1");
+    strcpy(mainServerIP, "192.168.1.102");
     
     return (const char*)mainServerIP;
 
@@ -162,7 +163,7 @@ void* frontendModule(void* arg){
         std::this_thread::sleep_for(std::chrono::seconds(13));
 
         strcpy(rmIP, "192.168.1.101");
-        clientStateInformation->info_communication_socket = createINFOSocket();
+        clientStateInformation->info_communication_socket = createINFOSocket(true);
         clientStateInformation->sync_data_communication_socket = createSYNCSocket();            
         
         cout << "\n>>> Server changed" << endl;
