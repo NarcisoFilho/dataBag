@@ -90,7 +90,7 @@ int main(int argc, char **argv){
 
   pthread_create(&user_terminal_thread, NULL, userTerminalThread, (void*)&clientStateInformation);
 
-  // Syncronization Module
+  // Frontend Module
   pthread_t frontend_moudle;
   // clientStateInformation.sync_data_communication_socket = sync_data_communication_socket;
   pthread_create(&frontend_moudle, NULL, frontendModule, (void*)&clientStateInformation);

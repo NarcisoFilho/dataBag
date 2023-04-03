@@ -24,10 +24,11 @@ const char* getRmIp();
 
 
 char rmIP[50] = "";
-int multicastSocket;
+int serverChanelMulticastSocket;
 int socketManagerDirect;
 struct sockaddr_in mcast_addr;
-
+const char serversGroup[] = "225.0.0.37";
+const char frontEndGroup[] = "225.0.0.4";
 
 int createINFOSocket(bool isReconection){
     int info_communication_socket = socket(AF_INET, SOCK_STREAM, 0);
@@ -115,67 +116,98 @@ int createSYNCSocket(){
     return sync_data_communication_socket;
 }
 
-void requestRmIP(){
-    sendMulticastMessage("requestRmIP");
-    string response = receiveMulticastMessage();
+// void requestRmIP(){
+//     sendMulticastMessage("requestRmIP");
+//     string response = receiveMulticastMessage();
 
-    while(response.substr(4)){
-        response = receiveMulticastMessage();
-    }
+//     while(response.substr(4) != "RmIP"){
+//         response = receiveMulticastMessage();
+//     }
 
-    response = response.substr(4);
-    strcpy(rmIP, response.c_str());
-}
+//     response = response.substr(4);
+//     strcpy(rmIP, response.c_str());
+// }
 
 const char* getRmIp(){
-    // static char mainServerIP[50] = "";
-    // strcpy(mainServerIP, "127.0.0.1");
+    static char mainServerIP[50] = "";
+    strcpy(mainServerIP, "127.0.0.1");
     // strcpy(mainServerIP, "172.18.0.1");
     // strcpy(mainServerIP, "192.168.1.101");
     // strcpy(mainServerIP, "172.25.61.213");
+    // strcpy(mainServerIP, "127.0.1.1");
+    // strcpy(mainServerIP, "127.0.1.1");
     
     return (const char*)mainServerIP;
-}
 
+    // requestRmIP();
+    // return (const char*) rmIP;
+}
+#include <thread>
 void* frontendModule(void* arg){
     ClientStateInformation *clientStateInformation = (ClientStateInformation*)arg;
-
+    string serverMessage;
 
     // listen multicast sock
+    // while(clientStateInformation->is_connected){
+    //     // serverMessage = receiveMulticastMessage();
+
+    //     // if(serverMessage[0] == 's'){
+    //     //     //nothing
+    //     // }else if(serverMessage[0] == 'c'){
+    //     //     strcpy(rmIP, serverMessage.substr(1).c_str());
+    //     //     clientStateInformation->info_communication_socket = createINFOSocket();
+    //     //     clientStateInformation->sync_data_communication_socket = createSYNCSocket();            
+    //     // }
+        cout << " \n>>>>>> I will change the server" << endl;
+        std::this_thread::sleep_for(std::chrono::seconds(10));
+
+        strcpy(rmIP, "192.168.1.101");
+        clientStateInformation->info_communication_socket = createINFOSocket();
+        clientStateInformation->sync_data_communication_socket = createSYNCSocket();            
+        
+        cout << "\n>>> Server changed" << endl;
+    // }
+
+    return NULL;
 
 }
 
-
-int createMulticastSocket(){
+int createServersMulticastSocket(){
     // Create a socket
-    multicastSocket = socket(AF_INET, SOCK_DGRAM, 0);
+    serverChanelMulticastSocket = socket(AF_INET, SOCK_DGRAM, 0);
 
     // Set up multicast address
     mcast_addr.sin_family = AF_INET;
-    mcast_addr.sin_addr.s_addr = inet_addr("225.0.0.37");
+    mcast_addr.sin_addr.s_addr = inet_addr(frontEndGroup);
     mcast_addr.sin_port = htons(12345);
    
     // Bind to the multicast address
-    bind(multicastSocket, (struct sockaddr*)&mcast_addr, sizeof mcast_addr);
+    bind(serverChanelMulticastSocket, (struct sockaddr*)&mcast_addr, sizeof mcast_addr);
 
     // Set socket options
     int optval = 1;
-    setsockopt(multicastSocket, SOL_SOCKET, SO_BROADCAST, &optval, sizeof optval);
+    setsockopt(serverChanelMulticastSocket, SOL_SOCKET, SO_BROADCAST, &optval, sizeof optval);
+
+    return serverChanelMulticastSocket;
 }
 
 void sendMulticastMessage(string message){
     // Send the message
     char buffer[1024];
     strcpy(buffer, message.c_str());
-    sendto(multicastSocket, buffer, strlen(buffer), 0, (struct sockaddr*)&mcast_addr, sizeof mcast_addr);
+    sendto(serverChanelMulticastSocket, buffer, strlen(buffer), 0, (struct sockaddr*)&mcast_addr, sizeof mcast_addr);
 }
 
-void receiveMulticastMessage(char buffer[1024]){
+string receiveMulticastMessage(){
+    char buffer[1024];
+    
     // Receive the message
-    int count = recvfrom(multicastSocket, buffer, 1024, 0, NULL, NULL);
+    int count = recvfrom(serverChanelMulticastSocket, buffer, 1024, 0, NULL, NULL);
     buffer[count] = '\0';
 
     // cout << buffer << endl;
+    string message = buffer;
+    return message;
 }
 
 #endif // __FRONTEND_HPP

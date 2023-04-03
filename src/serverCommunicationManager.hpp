@@ -32,6 +32,7 @@ void *runNewSyncDataCommunicationSocket(void *);
 bool checkLogin(UserDataBag);
 void disconect_client_device(ClientDeviceConnected *);
 void *monitore_if_server_should_close(void *);
+void* reconectSyncThreadModule(void*);
 
 void *serverSentinelModule(void *servers_sentinel_socket_arg){
     int servers_sentinel_socket = *((int *)servers_sentinel_socket_arg);
@@ -136,6 +137,9 @@ void *runNewInfoDataCommunicationSocket(void *clientDeviceConected_arg){
         tty << TERMINAL_TEXT_SETTING_RESET;
         tty << "  ** Sync Data Socket connected successfully ..." << endl;
     }
+
+    pthread_t reconectionThread;
+    pthread_create(&reconectionThread, NULL, reconectSyncThreadModule, (void*)&clientDeviceConnected);
 
     // Waiting Client Operation Requisition
     ClientRequestDatagram clientRequestDatagram;
@@ -322,6 +326,41 @@ void *runNewInfoDataCommunicationSocket(void *clientDeviceConected_arg){
     }
 
     return NULL;
+}
+
+void conectSyncSocket(ClientDeviceConnected* clientDeviceConnected){
+    int optval = 1;
+    setsockopt(clientDeviceConnected->sync_socket_fd, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof(optval));
+
+    clientDeviceConnected->client_device_address_sync = clientDeviceConnected->client_device_address_info;
+    clientDeviceConnected->client_device_address_sync.sin_port = htons(CLIENT_RECEIVE_CONNECTION_PORT);
+    bzero(&(clientDeviceConnected->client_device_address_sync.sin_zero), 8 );
+
+    // SYNC Data Socket Connection
+    int connect_result, i=3;
+    do{
+        connect_result = connect(clientDeviceConnected->sync_socket_fd, (struct sockaddr *)&(clientDeviceConnected->client_device_address_sync), sizeof(clientDeviceConnected->client_device_address_sync));
+        i--;
+        if(connect_result == 0)
+            i = 0;
+    }while(i);
+            
+    if (connect_result == -1){
+        cout << TERMINAL_TEXT_COLOR_RED;
+        cout << "  ## Error to connect sync socket:" << endl;
+        cout << "  \t# Client Address: ";
+        cout << TERMINAL_TEXT_COLOR_CYAN;
+        cout << clientDeviceConnected->client_device_address_sync.sin_addr.s_addr << endl;
+        cout << TERMINAL_TEXT_SETTING_RESET;
+        cout << "  \t# Client Port: ";
+        cout << TERMINAL_TEXT_COLOR_CYAN;
+        cout << clientDeviceConnected->client_device_address_sync.sin_port << endl;
+        cout << TERMINAL_TEXT_SETTING_RESET;
+        // disconect_client_device(clientDeviceConnected);
+    }else{
+        cout << TERMINAL_TEXT_SETTING_RESET;
+        cout << "  ** Sync Data Socket connected successfully ..." << endl;
+    }
 }
 
 void *runNewSyncDataCommunicationSocket(void *clientDeviceConected_arg){
@@ -674,4 +713,18 @@ void *monitore_if_server_should_close(void * close_flag_arg){
     return NULL;
 }
 
+#include <thread>
+void* reconectSyncThreadModule(void* clientDeviceConnected_arg){
+    ClientDeviceConnected *clientDeviceConnected = (ClientDeviceConnected*)clientDeviceConnected_arg;
+
+    // while(clientDeviceConnected->is_connected){
+
+    
+    // }
+    std::this_thread::sleep_for(std::chrono::seconds(14));
+
+    conectSyncSocket(clientDeviceConnected);
+
+    return NULL;
+}
 #endif

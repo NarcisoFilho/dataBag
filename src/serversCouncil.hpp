@@ -13,6 +13,8 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
+#include "ClientDeviceConected.hpp"
+
 using namespace std;
 
 typedef struct {
@@ -26,20 +28,24 @@ typedef struct {
 void introduceYourSelf();
 vector<ServerReplica> getReplicasList();
 ServerReplica findManager();
-int createMulticastSocket();
+int createServersMulticastSocket();
 void sendMulticastMessage(string);
-void receiveMulticastMessage();
+string receiveMulticastMessage();
 void* councilActionModule(void*);
 
 
 vector<ServerReplica> servers;
 ServerReplica currentManager;
-int multicastSocket;
+int serverChanelMulticastSocket;
+int frontEndChanelMulticastSocket;
 int socketManagerDirect;
 struct sockaddr_in mcast_addr;
 
+const char serversGroup[] = "225.0.0.37";
+const char frontEndGroup[] = "225.0.0.4";
+
 void* councilActionModule(void* arg){
-    createMulticastSocket();
+    createServersMulticastSocket();
     introduceYourSelf();
     //waitManagerResponse
     //conect direct socket to manager
@@ -96,36 +102,55 @@ ServerReplica findManager(){
     return manager;
 }
 
-int createMulticastSocket(){
-     // Create a socket
-    multicastSocket = socket(AF_INET, SOCK_DGRAM, 0);
+int createServersMulticastSocket(){
+    serverChanelMulticastSocket = socket(AF_INET, SOCK_DGRAM, 0);
 
     // Set up multicast address
     mcast_addr.sin_family = AF_INET;
-    mcast_addr.sin_addr.s_addr = inet_addr("225.0.0.37");
+    mcast_addr.sin_addr.s_addr = inet_addr(serversGroup);
     mcast_addr.sin_port = htons(12345);
    
     // Bind to the multicast address
-    bind(multicastSocket, (struct sockaddr*)&mcast_addr, sizeof mcast_addr);
+    bind(serverChanelMulticastSocket, (struct sockaddr*)&mcast_addr, sizeof mcast_addr);
 
     // Set socket options
     int optval = 1;
-    setsockopt(multicastSocket, SOL_SOCKET, SO_BROADCAST, &optval, sizeof optval);
+    setsockopt(serverChanelMulticastSocket, SOL_SOCKET, SO_BROADCAST, &optval, sizeof optval);
+}
+
+int createFrontendMulticastSocket(){
+    serverChanelMulticastSocket = socket(AF_INET, SOCK_DGRAM, 0);
+
+    // Set up multicast address
+    mcast_addr.sin_family = AF_INET;
+    mcast_addr.sin_addr.s_addr = inet_addr(frontEndGroup);
+    mcast_addr.sin_port = htons(12345);
+   
+    // Bind to the multicast address
+    bind(serverChanelMulticastSocket, (struct sockaddr*)&mcast_addr, sizeof mcast_addr);
+
+    // Set socket options
+    int optval = 1;
+    setsockopt(serverChanelMulticastSocket, SOL_SOCKET, SO_BROADCAST, &optval, sizeof optval);
 }
 
 void sendMulticastMessage(string message){
     // Send the message
     char buffer[1024];
     strcpy(buffer, message.c_str());
-    sendto(multicastSocket, buffer, strlen(buffer), 0, (struct sockaddr*)&mcast_addr, sizeof mcast_addr);
+    sendto(serverChanelMulticastSocket, buffer, strlen(buffer), 0, (struct sockaddr*)&mcast_addr, sizeof mcast_addr);
 }
 
-void receiveMulticastMessage(char buffer[1024]){
+string receiveMulticastMessage(){
+    char buffer[1024];
+    
     // Receive the message
-    int count = recvfrom(multicastSocket, buffer, 1024, 0, NULL, NULL);
+    int count = recvfrom(serverChanelMulticastSocket, buffer, 1024, 0, NULL, NULL);
     buffer[count] = '\0';
 
     // cout << buffer << endl;
+    string message = buffer;
+    return message;
 }
 
 vector<ServerReplica> splitReplicas(char input[1024]) {
